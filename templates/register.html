@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — TalentMap</title>
+  <meta name="description" content="Create your TalentMap account and start managing talent effectively." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --clr-bg-1:    #0d0f1a;
+      --clr-accent:  #6366f1;
+      --clr-accent2: #8b5cf6;
+      --clr-text:    #f1f5f9;
+      --clr-muted:   #94a3b8;
+      --clr-border:  rgba(255,255,255,0.08);
+      --clr-glass:   rgba(255,255,255,0.04);
+      --clr-error:   #f87171;
+      --clr-success: #34d399;
+      --radius:      14px;
+      --transition:  0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--clr-bg-1);
+      color: var(--clr-text);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      padding: 2rem 0;
+    }
+
+    /* ── Animated orbs ── */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.32;
+      animation: float 8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .bg-orb--1 { width: 480px; height: 480px; background: #8b5cf6; top: -120px; right: -100px; animation-delay: 0s; }
+    .bg-orb--2 { width: 360px; height: 360px; background: #6366f1; bottom: -80px; left: -80px;  animation-delay: 3s; }
+    .bg-orb--3 { width: 220px; height: 220px; background: #06b6d4; top: 40%;   right: 20%;     animation-delay: 6s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-20px); }
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 450px;
+      margin: 1.5rem;
+      background: rgba(17, 24, 39, 0.74);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--clr-border);
+      border-radius: 22px;
+      padding: 2.6rem 2.4rem 2.2rem;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Brand ── */
+    .brand {
+      display: flex; align-items: center; gap: 0.55rem;
+      margin-bottom: 2rem;
+    }
+    .brand-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--clr-accent), var(--clr-accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.5);
+    }
+    .brand-name { font-size: 1.18rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-name span { color: var(--clr-accent); }
+
+    /* ── Heading ── */
+    .card-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+    .card-sub   { font-size: 0.88rem; color: var(--clr-muted); margin-top: 0.4rem; margin-bottom: 1.8rem; }
+
+    /* ── Two-column grid ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 1rem;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    /* ── Form group ── */
+    .form-group { margin-bottom: 1.1rem; }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--clr-muted);
+      margin-bottom: 0.42rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      color: var(--clr-muted); font-size: 0.95rem; pointer-events: none;
+      transition: color var(--transition);
+    }
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 0.76rem 1rem 0.76rem 2.5rem;
+      background: var(--clr-glass);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      color: var(--clr-text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input::placeholder { color: #475569; }
+    input:focus {
+      border-color: var(--clr-accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+    .input-wrap:focus-within .input-icon { color: var(--clr-accent); }
+
+    /* ── Password strength bar ── */
+    .strength-bar {
+      display: flex; gap: 5px; margin-top: 0.5rem;
+    }
+    .strength-bar span {
+      flex: 1; height: 3px; border-radius: 99px;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.3s ease;
+    }
+    .strength-label {
+      font-size: 0.74rem; color: var(--clr-muted);
+      margin-top: 0.3rem; height: 1em;
+      transition: color 0.3s;
+    }
+
+    /* ── Terms ── */
+    .terms-label {
+      display: flex; align-items: flex-start; gap: 0.55rem;
+      font-size: 0.83rem; color: var(--clr-muted);
+      cursor: pointer; user-select: none;
+      margin-bottom: 1.4rem;
+      line-height: 1.5;
+    }
+    .terms-label input[type="checkbox"] {
+      width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; padding: 0;
+      accent-color: var(--clr-accent); cursor: pointer;
+    }
+    .link { color: var(--clr-accent); text-decoration: none; font-weight: 500; transition: opacity var(--transition); }
+    .link:hover { opacity: 0.75; }
+
+    /* ── Button ── */
+    .btn-primary {
+      width: 100%;
+      padding: 0.82rem;
+      background: linear-gradient(135deg, var(--clr-accent), var(--clr-accent2));
+      border: none; border-radius: var(--radius);
+      color: #fff; font-size: 0.95rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; letter-spacing: 0.01em;
+      box-shadow: 0 6px 20px rgba(99,102,241,0.38);
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+      opacity: 0; transition: opacity var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 10px 28px rgba(99,102,241,0.45); }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ── Footer ── */
+    .card-footer { text-align: center; font-size: 0.85rem; color: var(--clr-muted); margin-top: 1.2rem; }
+
+    /* ── Error ── */
+    .error-msg {
+      display: none; font-size: 0.76rem;
+      color: var(--clr-error); margin-top: 0.3rem; padding-left: 0.1rem;
+    }
+    input.is-error { border-color: var(--clr-error); }
+    input.is-error:focus { box-shadow: 0 0 0 3px rgba(248,113,113,0.18); }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex; align-items: center; gap: 0.8rem;
+      color: var(--clr-muted); font-size: 0.78rem; margin: 1.2rem 0;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--clr-border); }
+  </style>
+</head>
+<body>
+
+  <div class="bg-orb bg-orb--1"></div>
+  <div class="bg-orb bg-orb--2"></div>
+  <div class="bg-orb bg-orb--3"></div>
+
+  <div class="card" role="main">
+
+    <div class="brand">
+      <div class="brand-icon">🗺️</div>
+      <span class="brand-name">Talent<span>Map</span></span>
+    </div>
+
+    <h1 class="card-title">Create an account</h1>
+    <p class="card-sub">Start mapping your talent pipeline today.</p>
+
+    <form id="registerForm" novalidate>
+      {% csrf_token %}
+
+      <div class="form-grid">
+
+        <!-- First name -->
+        <div class="form-group">
+          <label for="firstName">First name</label>
+          <div class="input-wrap">
+            <input type="text" id="firstName" name="first_name" placeholder="Jane" autocomplete="given-name" required />
+            <span class="input-icon" aria-hidden="true">👤</span>
+          </div>
+          <span class="error-msg" id="firstNameError">Required.</span>
+        </div>
+
+        <!-- Last name -->
+        <div class="form-group">
+          <label for="lastName">Last name</label>
+          <div class="input-wrap">
+            <input type="text" id="lastName" name="last_name" placeholder="Doe" autocomplete="family-name" required />
+            <span class="input-icon" aria-hidden="true">👤</span>
+          </div>
+          <span class="error-msg" id="lastNameError">Required.</span>
+        </div>
+
+        <!-- Email — full width -->
+        <div class="form-group full">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+            <span class="input-icon" aria-hidden="true">✉</span>
+          </div>
+          <span class="error-msg" id="emailError">Please enter a valid email address.</span>
+        </div>
+
+        <!-- Password — full width -->
+        <div class="form-group full">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="password" name="password" placeholder="Min. 8 characters" autocomplete="new-password" required />
+            <span class="input-icon" aria-hidden="true">🔒</span>
+          </div>
+          <!-- Strength indicator -->
+          <div class="strength-bar" id="strengthBar">
+            <span id="s1"></span><span id="s2"></span><span id="s3"></span><span id="s4"></span>
+          </div>
+          <div class="strength-label" id="strengthLabel"></div>
+          <span class="error-msg" id="passwordError">Password must be at least 8 characters.</span>
+        </div>
+
+        <!-- Confirm password — full width -->
+        <div class="form-group full">
+          <label for="confirmPassword">Confirm password</label>
+          <div class="input-wrap">
+            <input type="password" id="confirmPassword" name="confirm_password" placeholder="Re-enter password" autocomplete="new-password" required />
+            <span class="input-icon" aria-hidden="true">🔒</span>
+          </div>
+          <span class="error-msg" id="confirmError">Passwords do not match.</span>
+        </div>
+
+      </div><!-- /form-grid -->
+
+      <!-- Terms -->
+      <label class="terms-label">
+        <input type="checkbox" id="terms" name="terms" required />
+        I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
+      </label>
+      <span class="error-msg" id="termsError" style="display:none;margin-top:-1rem;margin-bottom:0.8rem;">You must accept the terms.</span>
+
+      <button type="submit" id="registerBtn" class="btn-primary">Create Account</button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <div class="card-footer">
+      Already have an account? <a href="login.html" class="link">Sign in</a>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Password strength ──────────────────────────────────────
+    const passEl    = document.getElementById('password');
+    const bars      = [document.getElementById('s1'), document.getElementById('s2'),
+                       document.getElementById('s3'), document.getElementById('s4')];
+    const strengthLabel = document.getElementById('strengthLabel');
+    const levels = [
+      { color: '#f87171', label: 'Weak' },
+      { color: '#fb923c', label: 'Fair' },
+      { color: '#facc15', label: 'Good' },
+      { color: '#34d399', label: 'Strong' },
+    ];
+
+    function calcStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      return Math.min(4, score);
+    }
+
+    passEl.addEventListener('input', () => {
+      const pw    = passEl.value;
+      const score = pw ? calcStrength(pw) : 0;
+      bars.forEach((bar, i) => {
+        bar.style.background = i < score ? levels[score - 1].color : 'rgba(255,255,255,0.1)';
+      });
+      strengthLabel.textContent  = pw ? levels[score - 1]?.label ?? '' : '';
+      strengthLabel.style.color  = pw && score > 0 ? levels[score - 1].color : 'var(--clr-muted)';
+    });
+
+    // ── Validation ────────────────────────────────────────────
+    const form         = document.getElementById('registerForm');
+    const firstNameEl  = document.getElementById('firstName');
+    const lastNameEl   = document.getElementById('lastName');
+    const emailEl      = document.getElementById('email');
+    const confirmEl    = document.getElementById('confirmPassword');
+    const termsEl      = document.getElementById('terms');
+
+    const fields = {
+      firstName:       { el: firstNameEl, err: document.getElementById('firstNameError'), validate: v => v.trim().length > 0 },
+      lastName:        { el: lastNameEl,  err: document.getElementById('lastNameError'),  validate: v => v.trim().length > 0 },
+      email:           { el: emailEl,     err: document.getElementById('emailError'),     validate: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+      password:        { el: passEl,      err: document.getElementById('passwordError'),  validate: v => v.length >= 8 },
+      confirmPassword: { el: confirmEl,   err: document.getElementById('confirmError'),   validate: v => v === passEl.value },
+    };
+
+    Object.values(fields).forEach(({ el, err }) => {
+      el.addEventListener('input', () => {
+        el.classList.remove('is-error');
+        err.style.display = 'none';
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      let valid = true;
+
+      Object.values(fields).forEach(({ el, err, validate }) => {
+        if (!validate(el.value)) {
+          el.classList.add('is-error');
+          err.style.display = 'block';
+          valid = false;
+        } else {
+          el.classList.remove('is-error');
+          err.style.display = 'none';
+        }
+      });
+
+      const termsErr = document.getElementById('termsError');
+      if (!termsEl.checked) {
+        termsErr.style.display = 'block'; valid = false;
+      } else {
+        termsErr.style.display = 'none';
+      }
+
+      if (!valid) e.preventDefault();
+    });
+  </script>
+</body>
+</html>

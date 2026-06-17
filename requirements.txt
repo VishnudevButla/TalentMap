@@ -1,0 +1,32 @@
+# TalentMap - Python dependencies
+# Install with: pip install -r requirements.txt
+
+# AWS S3
+boto3==1.43.31
+
+# MongoDB
+pymongo[srv]==4.7.3
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Web framework (Flask)
+Flask==2.3.3
+flask-cors==6.0.1
+Werkzeug==2.3.7
+
+# PDF parsing (resume reading)
+pdfplumber==0.10.3
+PyMuPDF==1.23.8
+pypdf==6.8.0
+
+# NLP / resume parsing
+spacy==3.8.7
+
+# Database (TiDB / MySQL)
+mysql-connector-python==9.6.0
+SQLAlchemy==2.0.38
+
+# Utilities
+requests==2.32.5
+python-multipart==0.0.22
