@@ -1,0 +1,59 @@
+"""
+app/core/security.py — JWT Authentication (Optional but Recommended)
+
+Handles user authentication using JSON Web Tokens (JWT).
+
+What is JWT?
+- A signed token the server gives to a client after login
+- The client sends it with every request in the Authorization header
+- The server verifies the signature to confirm the user's identity
+- No session stored on server — stateless auth
+
+Key functions:
+
+1. create_access_token(data: dict) → token string
+   - Takes user info (e.g. {"sub": user_id})
+   - Signs it with SECRET_KEY + expiry time
+   - Returns a JWT string the client stores (in localStorage or cookie)
+
+2. verify_token(token: str) → user_id
+   - Decodes and validates the JWT
+   - Raises 401 Unauthorized if invalid or expired
+
+3. get_current_user (FastAPI Dependency)
+   - Used as: current_user = Depends(get_current_user)
+   - Automatically extracts + validates token from request headers
+   - Inject into any route that requires authentication
+
+Dependencies:
+- python-jose for JWT encoding/decoding
+- passlib for password hashing (bcrypt)
+"""
+
+# from datetime import datetime, timedelta
+# from jose import JWTError, jwt
+# from passlib.context import CryptContext
+# from fastapi import Depends, HTTPException, status
+# from fastapi.security import OAuth2PasswordBearer
+# from app.config import settings
+
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# def hash_password(password: str) -> str:
+#     # Hash a plaintext password before storing in DB
+#     pass
+
+# def verify_password(plain: str, hashed: str) -> bool:
+#     # Compare plaintext against hashed (during login)
+#     pass
+
+# def create_access_token(data: dict) -> str:
+#     # Sign and encode user data into a JWT
+#     # Set expiry from settings.access_token_expire_minutes
+#     pass
+
+# def get_current_user(token: str = Depends(oauth2_scheme)):
+#     # FastAPI dependency — validates JWT on protected routes
+#     # Returns the user_id embedded in the token
+#     pass

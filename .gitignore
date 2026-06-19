@@ -147,3 +147,11 @@ resumes/
 # ==============================================================================
 dump/
 *.bson
+
+# ==============================================================================
+# TalentMap Specific ignores
+# ==============================================================================
+# Gitignore trained ML models (they should be pulled from S3, not tracked in git)
+app/ml/models/*.pkl
+app/ml/models/*.joblib
+!app/ml/models/.gitkeep

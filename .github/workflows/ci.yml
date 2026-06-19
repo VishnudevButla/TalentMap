@@ -1,0 +1,22 @@
+# .github/workflows/ci.yml — Continuous Integration Pipeline
+# Triggered on commits to 'main' or pull requests.
+
+name: TalentMap CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Jobs defined:
+# 1. lint-and-test:
+#    - Runner OS: ubuntu-latest
+#    - Steps:
+#      - Check out code repository using actions/checkout@v3.
+#      - Set up Python version 3.10 using actions/setup-python@v4.
+#      - Cache python packages to speed up pipeline executions.
+#      - Install dependencies (pip install -r requirements.txt).
+#      - Run linting checks (flake8 or black formatting checks).
+#      - Download spaCy English model (python -m spacy download en_core_web_sm).
+#      - Run test suite with PyTest (pytest tests/).

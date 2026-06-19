@@ -1,0 +1,32 @@
+# docker-compose.yml — Local Development Environment Orchestration
+# Tickers up all the application pieces (FastAPI, Streamlit, MongoDB, and AWS S3 mocks).
+# Run command: docker-compose up --build
+
+version: '3.8'
+
+services:
+  # MongoDB service
+  # - Container image: mongo:6.0
+  # - Exposed ports: 27017:27017
+  # - Setup volumes for data persistence: mongodb_data:/data/db
+
+  # LocalStack service (to mock S3 locally)
+  # - Container image: localstack/localstack
+  # - Exposed ports: 4566:4566
+  # - Environment configuration (SERVICES=s3)
+
+  # FastAPI Backend Service
+  # - Build configuration pointing to Dockerfile (runner stage, target=fastapi)
+  # - Exposed ports: 8000:8000
+  # - Environment overrides pointing MONGO_URI and AWS_S3 to local service networks
+  # - Depends on: mongodb & localstack
+
+  # Streamlit Frontend Service
+  # - Build configuration pointing to Dockerfile (runner stage, target=streamlit)
+  # - Exposed ports: 8501:8501
+  # - Environment: API_BASE_URL=http://backend:8000/api
+  # - Depends on: backend
+
+volumes:
+  # mongodb_data: local directory volume map
+  pass
