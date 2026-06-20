@@ -30,30 +30,52 @@ Dependencies:
 - passlib for password hashing (bcrypt)
 """
 
-# from datetime import datetime, timedelta
-# from jose import JWTError, jwt
-# from passlib.context import CryptContext
-# from fastapi import Depends, HTTPException, status
-# from fastapi.security import OAuth2PasswordBearer
-# from app.config import settings
+import bcrypt
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from app.config import settings
 
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# def hash_password(password: str) -> str:
-#     # Hash a plaintext password before storing in DB
-#     pass
+def hash_password(password: str) -> str:
+    # Hash a plaintext password before storing in DB
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode('utf-8')
 
-# def verify_password(plain: str, hashed: str) -> bool:
-#     # Compare plaintext against hashed (during login)
-#     pass
+def verify_password(plain: str, hashed: str) -> bool:
+    # Compare plaintext against hashed (during login)
+    try:
+        pwd_bytes = plain.encode('utf-8')
+        hashed_bytes = hashed.encode('utf-8')
+        return bcrypt.checkpw(pwd_bytes, hashed_bytes)
+    except Exception:
+        return False
 
-# def create_access_token(data: dict) -> str:
-#     # Sign and encode user data into a JWT
-#     # Set expiry from settings.access_token_expire_minutes
-#     pass
+def create_access_token(data: dict) -> str:
+    # Sign and encode user data into a JWT
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return encoded_jwt
 
-# def get_current_user(token: str = Depends(oauth2_scheme)):
-#     # FastAPI dependency — validates JWT on protected routes
-#     # Returns the user_id embedded in the token
-#     pass
+def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+    # FastAPI dependency — validates JWT on protected routes
+    # Returns the user_id embedded in the token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+        return user_id
+    except JWTError:
+        raise credentials_exception

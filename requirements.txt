@@ -10,10 +10,12 @@ pymongo[srv]==4.7.3
 # Environment variables
 python-dotenv==1.0.0
 
-# Web framework (FastAPI)
+# Web framework (FastAPI) & Authentication
 fastapi==0.111.0
 uvicorn==0.30.1
-
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator
 
 # PDF parsing (resume reading)
 pdfplumber==0.10.3

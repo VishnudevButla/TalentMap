@@ -235,7 +235,7 @@
     <p class="card-sub">Start mapping your talent pipeline today.</p>
 
     <form id="registerForm" novalidate>
-      {% csrf_token %}
+      <div id="globalError" style="display:none; color: var(--clr-error); background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); border-radius: var(--radius); padding: 0.75rem; font-size: 0.85rem; margin-bottom: 1.2rem; text-align: center;"></div>
 
       <div class="form-grid">
 
@@ -309,7 +309,7 @@
     <div class="divider">or</div>
 
     <div class="card-footer">
-      Already have an account? <a href="login.html" class="link">Sign in</a>
+      Already have an account? <a href="/login" class="link">Sign in</a>
     </div>
 
   </div>
@@ -370,7 +370,8 @@
       });
     });
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
       let valid = true;
 
       Object.values(fields).forEach(({ el, err, validate }) => {
@@ -391,7 +392,51 @@
         termsErr.style.display = 'none';
       }
 
-      if (!valid) e.preventDefault();
+      if (!valid) return;
+
+      const globalError = document.getElementById('globalError');
+      globalError.style.display = 'none';
+      globalError.textContent = '';
+
+      const registerBtn = document.getElementById('registerBtn');
+      const originalBtnText = registerBtn.textContent;
+      registerBtn.disabled = true;
+      registerBtn.textContent = 'Registering...';
+
+      try {
+        const username = (firstNameEl.value.trim() + ' ' + lastNameEl.value.trim()).trim();
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: username,
+            email: emailEl.value.trim(),
+            password: passEl.value
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          registerBtn.textContent = 'Success! Redirecting...';
+          registerBtn.style.background = 'var(--clr-success)';
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+        } else {
+          registerBtn.disabled = false;
+          registerBtn.textContent = originalBtnText;
+          globalError.textContent = data.detail || 'Registration failed. Please try again.';
+          globalError.style.display = 'block';
+        }
+      } catch (err) {
+        registerBtn.disabled = false;
+        registerBtn.textContent = originalBtnText;
+        globalError.textContent = 'Network error. Please check your connection.';
+        globalError.style.display = 'block';
+      }
     });
   </script>
 </body>

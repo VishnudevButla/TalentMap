@@ -9,7 +9,7 @@ Flow:
 2. Define response models (e.g. indicating upload success, returning generated resume ID).
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import Optional
 
@@ -17,22 +17,44 @@ class ResumeUploadResponse(BaseModel):
     """
     Schema returned after successful resume file upload.
     """
-    # resume_id: str - Unique identifier generated for the resume
-    # s3_key: str - Location where file is saved in S3
-    # user_id: str - Owner/uploader identifier
-    # status: str - "SUCCESS" or "FAILED"
-    # uploaded_at: datetime - Timestamp of ingestion
-    pass
+    resume_id: str # Unique identifier generated for the resume
+    s3_key: str # Location where file is saved in S3
+    user_id: str # Owner/uploader identifier
+    status: str # "SUCCESS" or "FAILED"
+    uploaded_at: datetime # Timestamp of ingestion
 
 class ResumeMetadata(BaseModel):
     """
     Metadata representation of a candidate resume stored in DB.
     """
-    # id: str - MongoDB primary key string representation
-    # user_id: str - Owner of the resume
-    # file_name: str - Original filename (e.g., Jane_Doe_Resume.pdf)
-    # file_size_bytes: int - Size of the uploaded file
-    # s3_key: str - Object storage index key
-    # uploaded_at: datetime - Upload timestamp
-    # status: str - Status of pipeline analysis (e.g. "uploaded", "processing", "analyzed", "error")
-    pass
+    id: str = Field(alias="_id") # MongoDB primary key string representation
+    user_id: str # Owner of the resume
+    file_name: str # Original filename (e.g., Jane_Doe_Resume.pdf)
+    file_size_bytes: int # Size of the uploaded file
+    s3_key: str # Object storage index key
+    uploaded_at: datetime # Upload timestamp
+    status: str # Status of pipeline analysis (e.g. "uploaded", "processing", "analyzed", "error")
+
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True
+    }
+    
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: str = Field(alias="_id")
+    username: str
+    email: str
+
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True
+    }

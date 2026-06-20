@@ -19,18 +19,27 @@ Connection uses:
 - ServerApi('1') to pin to MongoDB stable API version
 """
 
-# import certifi
-# from pymongo import MongoClient
-# from pymongo.server_api import ServerApi
-# from app.config import settings
+import sys
+from pathlib import Path
 
-# _client = MongoClient(
-#     settings.mongodb_uri,
-#     server_api=ServerApi('1'),
-#     tlsCAFile=certifi.where()
-# )
+# Add project root to sys.path to allow running this script directly
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-# db = _client["talentmap"]
+import certifi
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from app.config import settings
 
-# resume_collection   = db["resumes"]    # raw upload metadata
-# analysis_collection = db["analyses"]   # NLP + ML results
+_client = MongoClient(
+    settings.mongodb_uri,
+    server_api=ServerApi('1'),
+    tlsCAFile=certifi.where()
+)
+
+db = _client["talentmap"]
+
+resume_collection   = db["resumes"]    # raw upload metadata
+analysis_collection = db["analyses"]   # NLP + ML results
+user_collection     = db["users"]      # user auth credentials

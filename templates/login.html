@@ -241,7 +241,7 @@
     <p class="card-sub">Sign in to continue to your dashboard.</p>
 
     <form id="loginForm" novalidate>
-      {% csrf_token %}
+      <div id="globalError" style="display:none; color: var(--clr-error); background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); border-radius: var(--radius); padding: 0.75rem; font-size: 0.85rem; margin-bottom: 1.2rem; text-align: center;"></div>
 
       <div class="form-group">
         <label for="email">Email address</label>
@@ -275,7 +275,7 @@
     <div class="divider">or</div>
 
     <div class="card-footer">
-      Don't have an account? <a href="register.html" class="link">Create one</a>
+      Don't have an account? <a href="/register" class="link">Create one</a>
     </div>
 
   </div>
@@ -299,7 +299,8 @@
     emailEl.addEventListener('input', () => clearError(emailEl, emailErr));
     passEl.addEventListener('input',  () => clearError(passEl,  passErr));
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
       let valid = true;
 
       if (!emailEl.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value)) {
@@ -310,7 +311,54 @@
         showError(passEl, passErr); valid = false;
       } else { clearError(passEl, passErr); }
 
-      if (!valid) e.preventDefault();
+      if (!valid) return;
+
+      const globalError = document.getElementById('globalError');
+      globalError.style.display = 'none';
+      globalError.textContent = '';
+
+      const loginBtn = document.getElementById('loginBtn');
+      const originalBtnText = loginBtn.textContent;
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing In...';
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: emailEl.value.trim(),
+            password: passEl.value
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Store token in localStorage
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          loginBtn.textContent = 'Success!';
+          loginBtn.style.background = 'var(--clr-success)';
+          setTimeout(() => {
+            // Redirect to main page/dashboard
+            window.location.href = '/';
+          }, 1000);
+        } else {
+          loginBtn.disabled = false;
+          loginBtn.textContent = originalBtnText;
+          globalError.textContent = data.detail || 'Invalid email or password.';
+          globalError.style.display = 'block';
+        }
+      } catch (err) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = originalBtnText;
+        globalError.textContent = 'Network error. Please check your connection.';
+        globalError.style.display = 'block';
+      }
     });
   </script>
 </body>

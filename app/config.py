@@ -10,24 +10,31 @@ How it works:
 - settings.mongodb_uri, settings.aws_bucket_name, etc.
 """
 
-# from pydantic_settings import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# class Settings(BaseSettings):
-#     # MongoDB
-#     mongodb_uri: str
-#
-#     # AWS S3
-#     aws_access_key_id: str
-#     aws_secret_access_key: str
-#     aws_bucket_name: str
-#     aws_region: str
-#
-#     # JWT (optional)
-#     secret_key: str = "changeme"
-#     algorithm: str = "HS256"
-#     access_token_expire_minutes: int = 30
-#
-#     class Config:
-#         env_file = ".env"
+# Resolve .env relative to this file's location (app/ -> project root)
+_ENV_FILE = Path(__file__).parent.parent / ".env"
 
-# settings = Settings()
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",          # silently skip any extra keys in .env
+    )
+
+    # MongoDB
+    mongodb_uri: str
+
+    # AWS S3
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    aws_bucket_name: str
+    aws_region: str
+
+    # JWT configuration
+    secret_key: str = "changeme"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
+settings = Settings()
