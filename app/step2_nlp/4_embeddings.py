@@ -2,111 +2,192 @@
 app/nlp/embeddings.py — Resume/Job Description Vectorization and Similarity
 
 This module is responsible for:
-1. Converting resume text and job descriptions into numeric vectors (embeddings).
-2. Supporting multiple embedding models: TF-IDF (scikit-learn) and BERT/Sentence-Transformers.
-3. Calculating the individual cosine similarities and scores between different components of the vector and job description(skills, projects, certifications, experience) to represent how well a candidate
-   matches a job description.
-
-Flow:
-1. Load the vectorizer model (or sentence transformer pipeline).
-2. Generate embeddings for resume text.
-3. Generate embeddings for job description text.
-4. Calculate the weighted average of cosine similarity.
-5. Return matching percentage score.
+1. Converting resume and job description text into Sentence-BERT embeddings.
+2. Computing cosine similarity between embeddings.
+3. Computing weighted similarity across resume components.
 """
 
-from typing import List, Dict, Any
+from typing import Dict, Any
 import numpy as np
+# pyrefly: ignore [missing-import]
+from sentence_transformers import SentenceTransformer
 
-class EmbeddingsGenerator:
+# --------------------------------------------------------------------
+# Load the Sentence-BERT model once when the module is imported.
+# --------------------------------------------------------------------
+
+MODEL_NAME = "all-MiniLM-L6-v2"
+model = SentenceTransformer(MODEL_NAME)
+
+
+# --------------------------------------------------------------------
+# Embedding Generation
+# --------------------------------------------------------------------
+
+def get_embedding(text: str) -> np.ndarray:
     """
-    Handles text embedding generation and similarity computations.
+    Generates a Sentence-BERT embedding for the given text.
+
+    Args:
+        text (str): Input text.
+
+    Returns:
+        np.ndarray: 384-dimensional embedding vector.
     """
 
-    def __init__(self, model_type: str = "tfidf"):
-        """
-        Initializes the vectorizer (e.g., TfidfVectorizer or SentenceTransformer).
-        
-        Args:
-            model_type (str): Either 'tfidf' or 'bert' / 'sentence-transformers'.
-        """
-        # 1. Store model_type.
-        # 2. If 'tfidf', initialize TfidfVectorizer.
-        # 3. If 'bert', load SentenceTransformer model.
-        pass
-
-    def get_embedding(self, text: str) -> np.ndarray:
-        """
-        Generates numerical vector/embedding for the given text.
-        
-        Args:
-            text (str): Input text (clean resume or job description).
-            
-        Returns:
-            np.ndarray: Vector representation of the text.
-        """
-        # 1. Transform text to vector.
-        # 2. Return as numpy array.
+    if not text or not text.strip():
         return np.array([])
 
-    def calculate_similarity(self, resume_vector: np.ndarray, job_vector: np.ndarray) -> float:
-        """
-        Calculates the Cosine Similarity between a resume vector and a job description vector.
-        
-        Formula: (A . B) / (||A|| * ||B||)
-        
-        Args:
-            resume_vector (np.ndarray): Vector representation of the resume.
-            job_vector (np.ndarray): Vector representation of the job description.
-            
-        Returns:
-            float: Similarity score between 0.0 and 1.0 (or percentage).
-        """
-        # 1. Compute dot product of resume_vector and job_vector.
-        # 2. Compute L2 norms.
-        # 3. Return similarity score.
+    return model.encode(
+        text,
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )
+
+
+# --------------------------------------------------------------------
+# Cosine Similarity
+# --------------------------------------------------------------------
+
+def calculate_similarity(
+    resume_vector: np.ndarray,
+    job_vector: np.ndarray
+) -> float:
+    """
+    Calculates cosine similarity between two embedding vectors.
+
+    Args:
+        resume_vector (np.ndarray): Resume embedding.
+        job_vector (np.ndarray): Job description embedding.
+
+    Returns:
+        float: Similarity score between 0 and 1.
+    """
+
+    if resume_vector.size == 0 or job_vector.size == 0:
         return 0.0
 
-    def calculate_weighted_component_similarity(
-        self,
-        resume_components: Dict[str, np.ndarray],
-        job_components: Dict[str, np.ndarray],
-        weights: Dict[str, float]
-    ) -> Dict[str, Any]:
-        """
-        Calculates individual cosine similarities and scores between different components
-        of the resume and the job description (skills, projects, certifications, experience),
-        and returns a weighted average matching percentage score.
+    # Embeddings are normalized, so dot product == cosine similarity
+    similarity = np.dot(resume_vector, job_vector)
 
-        Args:
-            resume_components (Dict[str, np.ndarray]): Dictionary of vectors for each component of the resume.
-                Keys: 'skills', 'projects', 'certifications', 'experience'.
-            job_components (Dict[str, np.ndarray]): Dictionary of vectors for each corresponding component of the job description.
-                Keys: 'skills', 'projects', 'certifications', 'experience'.
-            weights (Dict[str, float]): Importance weights for each component (e.g. {'skills': 0.4, 'experience': 0.3, ...}).
-                Must sum to 1.0.
+    return float(similarity)
 
-        Returns:
-            Dict[str, Any]: A dictionary containing individual similarity scores and the final weighted matching percentage.
-                Example structure:
-                {
-                    "individual_scores": {
-                        "skills": 0.85,
-                        "projects": 0.75,
-                        "certifications": 0.90,
-                        "experience": 0.80
-                    },
-                    "weighted_average_score": 81.5
-                }
-        """
-        # 1. Initialize empty dict for individual scores.
-        # 2. Loop through each component key (skills, projects, certifications, experience).
-        # 3. If vectors exist for both resume and job components, calculate their cosine similarity.
-        # 4. Multiply each similarity score by its corresponding weight.
-        # 5. Sum the weighted similarities to get the final average.
-        # 6. Return a dictionary containing the component breakdown and the overall weighted match percentage.
-        return {
-            "individual_scores": {},
-            "weighted_average_score": 0.0
+
+# --------------------------------------------------------------------
+# Weighted Component Similarity
+# --------------------------------------------------------------------
+
+def calculate_weighted_component_similarity(
+    resume_components: Dict[str, np.ndarray],
+    job_components: Dict[str, np.ndarray],
+    weights: Dict[str, float]
+) -> Dict[str, Any]:
+    """
+    Calculates weighted similarity across resume components.
+
+    Args:
+        resume_components: Dictionary containing embeddings for
+            skills, experience, projects, certifications.
+        job_components: Same structure for the job description.
+        weights: Weight assigned to each component.
+
+    Returns:
+        {
+            "individual_scores": {...},
+            "weighted_average_score": 84.32
         }
+    """
 
+    individual_scores = {}
+
+    weighted_sum = 0.0
+    total_weight = 0.0
+
+    for component, weight in weights.items():
+
+        resume_vector = resume_components.get(component)
+        job_vector = job_components.get(component)
+
+        if (
+            resume_vector is None
+            or job_vector is None
+            or resume_vector.size == 0
+            or job_vector.size == 0
+        ):
+            similarity = 0.0
+        else:
+            similarity = calculate_similarity(
+                resume_vector,
+                job_vector
+            )
+
+        individual_scores[component] = round(similarity, 4)
+
+        weighted_sum += similarity * weight
+        total_weight += weight
+
+    final_score = (
+        (weighted_sum / total_weight) * 100
+        if total_weight > 0
+        else 0.0
+    )
+
+    return {
+        "individual_scores": individual_scores,
+        "weighted_average_score": round(final_score, 2)
+    }
+
+
+# --------------------------------------------------------------------
+# Convert extracted entities into embeddings
+# --------------------------------------------------------------------
+
+def embed_components(
+    entities: Dict[str, Any]
+) -> Dict[str, np.ndarray]:
+    """
+    Converts extracted resume/job entities into embeddings.
+
+    Example input:
+    {
+        "skills": ["Python", "SQL"],
+        "experience": ["Software Engineer"],
+        "projects": ["Resume Parser"],
+        "certifications": ["AWS CCP"]
+    }
+
+    Returns:
+        Dictionary with embeddings for each component.
+    """
+
+    components = {}
+
+    for key in [
+        "skills",
+        "experience",
+        "projects",
+        "certifications"
+    ]:
+
+        values = entities.get(key, [])
+
+        if isinstance(values, list):
+            text = " ".join(values)
+        else:
+            text = str(values)
+
+        components[key] = get_embedding(text)
+
+    return components
+
+
+# --------------------------------------------------------------------
+# Default component weights
+# --------------------------------------------------------------------
+
+DEFAULT_WEIGHTS = {
+    "skills": 0.40,
+    "experience": 0.30,
+    "projects": 0.20,
+    "certifications": 0.10,
+}

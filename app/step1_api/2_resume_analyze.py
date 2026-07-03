@@ -28,25 +28,51 @@ Dependencies:
 - app.schemas.result_schema → AnalysisResponse
 """
 
-# from fastapi import APIRouter
-# from app.core.db import resume_collection, analysis_collection
-# from app.nlp.pdf_parser import extract_text
-# from app.nlp.preprocess import clean_text
-# from app.nlp.ner_extractor import extract_entities
-# from app.nlp.embeddings import get_embedding
-# from app.ml.predict import predict_role, predict_salary
+from app.core.s3_utils import download_file
+from bson import ObjectId
+from fastapi import APIRouter
+from app.core.db import resume_collection, analysis_collection
+# pyrefly: ignore [missing-import]
+from app.nlp.pdf_parser import extract_text
+# pyrefly: ignore [missing-import]
+from app.nlp.preprocess import clean_text
+# pyrefly: ignore [missing-import]
+from app.nlp.ner_extraction import extract_entities
+# pyrefly: ignore [missing-import]
+from app.nlp.embeddings import get_embedding
+# pyrefly: ignore [missing-import]
+from app.ml.predict import predict_role, predict_salary
 
-# router = APIRouter()
+router = APIRouter()
 
-# @router.post("/analyze")
-# async def analyze_resume(resume_id: str):
-#     # Step 1: Fetch resume doc from MongoDB
-#     # Step 2: Download PDF from S3
-#     # Step 3: Extract raw text from PDF
-#     # Step 4: Clean and preprocess text
-#     # Step 5: Run NER to extract structured entities
-#     # Step 6: Generate embedding vector
-#     # Step 7: Predict role + salary
-#     # Step 8: Save results to MongoDB
-#     # Step 9: Return results
-#     pass
+@router.post("/analyze")
+async def analyze_resume(resume_id: str):
+
+    print(f"Analyzing resume with ID: {resume_id}")
+
+    # Step 1: Fetch resume doc from MongoDB
+    resume_doc = resume_collection.find_one({"_id": ObjectId(resume_id)})
+
+    if not resume_doc:
+        return {"error": "Resume not found"}
+
+    s3_key = resume_doc.get("s3_key")
+    if not s3_key:
+        return {"error": "S3 key not found for this resume"}
+
+    # Step 2: Download PDF from S3
+    file_bytes = download_file(s3_key)
+    # Step 3: Extract raw text from PDF
+    raw_text = extract_text(file_bytes)
+    # Step 4: Clean and preprocess text
+    cleaned_text = clean_text(raw_text)
+    # Step 5: Run NER to extract structured entities
+    entities = extract_entities(cleaned_text)
+    # Step 6: Generate embedding vector
+    embedding = get_embedding(cleaned_text)
+    print("embedding shape:", embedding.shape)
+    print("EMBEDDINGS GENERATED!!")
+    # Step 7: Predict role + salary
+    # Step 8: Save results to MongoDB
+    # Step 9: Return results
+    pass

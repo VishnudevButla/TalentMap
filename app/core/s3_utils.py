@@ -17,6 +17,7 @@ Two main functions used across the app:
 S3 client is initialized once at module load using credentials from config.py
 """
 
+from botocore.exceptions import ClientError
 import boto3
 import uuid
 from app.config import settings
@@ -46,3 +47,54 @@ def get_presigned_url(s3_key: str, expires: int = 3600) -> str:
         },
         ExpiresIn=expires
     )
+
+def download_file(s3_key: str) -> bytes:
+    """
+    Download a file from S3.
+
+    Args:
+        s3_key: S3 object key.
+
+    Returns:
+        File contents as bytes.
+    """
+
+    try:
+        response = s3.get_object(
+            Bucket=settings.aws_bucket_name,
+            Key=s3_key,
+        )
+
+        return response["Body"].read()
+
+    except ClientError as e:
+        raise RuntimeError(f"Failed to download file: {e}")
+
+## WE CAN USE THIS TO ACCESS THE RESUME FROM THE URL.......WE'll uncomment it while checking S3
+# def get_presigned_url(
+#     s3_key: str,
+#     expires: int = 3600,
+# ) -> str:
+#     """
+#     Generate a temporary download URL.
+
+#     Args:
+#         s3_key: S3 object key.
+#         expires: Expiration time in seconds.
+
+#     Returns:
+#         Presigned URL.
+#     """
+
+#     try:
+#         return s3.generate_presigned_url(
+#             ClientMethod="get_object",
+#             Params={
+#                 "Bucket": settings.aws_bucket_name,
+#                 "Key": s3_key,
+#             },
+#             ExpiresIn=expires,
+#         )
+
+#     except ClientError as e:
+#         raise RuntimeError(f"Failed to generate presigned URL: {e}")
