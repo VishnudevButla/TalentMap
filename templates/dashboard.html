@@ -1,0 +1,114 @@
+{% extends "layouts/base_app.html" %}
+{% from "partials/icons.html" import check, plus, external_link, file %}
+
+{% block title %}Dashboard — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div class="identity">
+      <div class="avatar" id="candidateInitials">{{ candidate.initials }}</div>
+      <div>
+        <h1 id="candidateName">{{ candidate.name }}</h1>
+        <div class="identity-meta">
+          <span class="chip mono">{{ file() }}{{ candidate.resume_filename }}</span>
+          <span class="badge">Target: {{ target.role }} · {{ target.company }}</span>
+          <span class="chip">Analyzed {{ candidate.analyzed_date }}</span>
+          {% if is_sample %}<span class="badge sample">Sample data</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+  </div>
+
+  <div class="stat-row">
+    <div class="card">
+      <div class="card-head"><span class="stat-label">Match score</span><span class="stat-status {{ match.status }}">{{ match.status_label }}</span></div>
+      <div class="ring-wrap">
+        <div class="ring" data-pct="{{ match.score }}" style="--ring-color:var(--{{ match.status }})">
+          <span class="ring-value">0%</span>
+        </div>
+        <div class="ring-note"><p>{{ match.note | safe }}</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stat-label">Predicted role</span>
+      <div class="role-primary">{{ predicted_role.title }}</div>
+      <div class="meter"><span data-target="{{ predicted_role.confidence }}%"></span></div>
+      <div class="role-conf">{{ predicted_role.confidence }}% confidence</div>
+      <div class="role-alt">
+        {% for alt in predicted_role.alternates %}<span>{{ alt }}</span>{% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stat-label">Predicted salary</span>
+      <div class="salary-figure">${{ salary.median }}K<sup>median</sup></div>
+      <div class="band">
+        <div class="band-range" data-left="{{ salary.market_left_pct }}%" data-target="{{ salary.market_width_pct }}%" style="left:0;width:0"></div>
+        <div class="band-marker" data-left="{{ salary.marker_pct }}%"></div>
+      </div>
+      <div class="band-labels"><span>${{ salary.axis_min }}K</span><span>${{ salary.market_min }}K–${{ salary.market_max }}K market range</span><span>${{ salary.axis_max }}K</span></div>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="card">
+      <div class="card-head"><h2>Skill match breakdown</h2><a class="see-all" href="#">Export report</a></div>
+
+      <div class="skill-section">
+        <div class="skill-section-head"><span class="dot good"></span><h3>Matched skills</h3><span class="count">{{ matched_skills | length }} found</span></div>
+        <div class="chips">
+          {% for skill in matched_skills %}
+          <span class="skill-chip have">{{ check() }}{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="skill-section">
+        <div class="skill-section-head"><span class="dot crit"></span><h3>Missing — recommended to learn</h3><span class="count">{{ missing_skills | length }} gaps</span></div>
+        <div class="chips">
+          {% for gap in missing_skills %}
+          <span class="skill-chip gap">{{ plus() }}<b>{{ gap.name }}</b><span class="demand-tag">{{ gap.demand }} demand</span></span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-stack">
+      <div class="card">
+        <div class="card-head"><h2>Job-fit tracker</h2><a class="see-all" href="#">+ Add posting</a></div>
+        {% for job in target_roles %}
+        <div class="target-row">
+          <div class="target-role">
+            <a href="{{ job.link }}">{{ job.role }} · {{ job.company }} {{ external_link() }}</a>
+            <p>{{ job.location }}</p>
+          </div>
+          <div class="target-meter"><div class="meter"><span data-target="{{ job.pct }}%" style="background:var(--{{ job.status }})"></span></div></div>
+          <span class="target-pct {{ job.status }}">{{ job.pct }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
+        {% for skill in demand_skills %}
+        <div class="demand-row">
+          <span class="demand-name">{{ skill.name }}</span>
+          <div class="demand-track"><div class="demand-fill" data-target="{{ skill.score }}%"></div></div>
+          <span class="demand-val">{{ skill.score }}</span>
+          <span class="coverage {{ 'have' if skill.have else 'gap' }}">{{ 'Have it' if skill.have else 'Gap' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+{% endblock %}

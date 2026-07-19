@@ -7,10 +7,32 @@ structured entities as JSON, instead of spaCy pattern matching.
 
 import os
 import json
-import google.generativeai as genai
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])   # load your free API key from .env
-model = genai.GenerativeModel("gemini-2.0-flash")         # pick the free, fast model
+# Load .env so GEMINI_API_KEY is available even when not set in the shell
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Lazy-initialize the Gemini client so a missing key only raises when
+# extract_entities() is actually called, not at import time.
+_genai_model = None
+
+def _get_model():
+    global _genai_model
+    if _genai_model is not None:
+        return _genai_model
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise EnvironmentError(
+            "GEMINI_API_KEY is not set. Add it to your .env file to enable "
+            "LLM-based NER extraction."
+        )
+    import google.generativeai as genai  # noqa: PLC0415
+    genai.configure(api_key=api_key)
+    _genai_model = genai.GenerativeModel("gemini-2.0-flash")
+    return _genai_model
 
 
 PROMPT_TEMPLATE = """
@@ -66,26 +88,33 @@ RESUME:
 
 
 def extract_entities(resume_text: str, job_description: str) -> dict:
+    _empty = {
+        "skills": [], "education": [], "experience": [],
+        "projects": [], "certifications": [],
+    }
+
+    try:
+        llm = _get_model()
+    except EnvironmentError as exc:
+        print(f"WARNING: NER skipped — {exc}")
+        return _empty
+
     prompt = PROMPT_TEMPLATE.format(
         job_description=job_description,
         resume_text=resume_text,
     )
 
-    response = model.generate_content(prompt)          # send prompt to Gemini
-    raw_output = response.text.strip()
-
-    raw_output = raw_output.replace("```json", "").replace("```", "").strip()
-    # ^ Gemini sometimes wraps JSON in markdown code fences — strip those off
-
     try:
-        return json.loads(raw_output)                    # convert JSON text -> Python dict
-    except json.JSONDecodeError:
-        # LLM didn't return clean JSON — fail safely instead of crashing the pipeline
+        response = llm.generate_content(prompt)   # send prompt to Gemini
+        raw_output = response.text.strip()
+        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+        return json.loads(raw_output)             # convert JSON text → Python dict
+    except Exception as exc:
+        # LLM didn't return clean JSON or network error — fail safely
+        print(f"WARNING: NER extraction failed — {exc}")
         return {
-            "skills": [], "education": [], "experience": [],
-            "projects": [], "certifications": [],
-            "_error": "Failed to parse LLM output",
-            "_raw": raw_output,
+            **_empty,
+            "_error": str(exc),
         }
 '''
 # Example Usage (for testing)

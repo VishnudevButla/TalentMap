@@ -1,8 +1,6 @@
 import sys
 from pathlib import Path
-from datetime import datetime
-from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, HTTPException, Request, status
 
 # Ensure sys.path resolver is added to run/test directly
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -10,21 +8,15 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from app.core.db import user_collection
+from app.core.templates import templates
 from app.schemas.resume_schema import UserLogin
 from app.core.security import verify_password, create_access_token
 
 router = APIRouter()
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "templates"
-
-@router.get("/login", response_class=HTMLResponse)
-async def get_login_page():
-    login_html_path = TEMPLATES_DIR / "login.html"
-    if not login_html_path.exists():
-        raise HTTPException(status_code=404, detail="login.html not found")
-    with open(login_html_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
+@router.get("/login")
+async def get_login_page(request: Request):
+    return templates.TemplateResponse("auth/login.html", {"request": request})
 
 @router.post("/api/login")
 async def login_user(user_in: UserLogin):

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — TalentMap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../static/css/tokens.css" />
+  <link rel="stylesheet" href="../static/css/base.css" />
+  <link rel="stylesheet" href="../static/css/components.css" />
+  
+  <link rel="stylesheet" href="../static/css/dashboard.css" />
+
+  <script src="../static/js/auth-guard.js"></script>
+</head>
+<body>
+  <div class="page-glow" aria-hidden="true"></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <div class="shell">
+    <nav class="rail" aria-label="Primary">
+  <div class="brand">
+    <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
+    <span class="brand-name">Talent<em>Map</em></span>
+  </div>
+  <ul class="navlist">
+    <li>
+      <a href="dashboard.html" >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="upload.html" >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        New analysis
+      </a>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          History
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+          Market trends
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009.5 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9.5a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009.5 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9.5a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Settings
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+  </ul>
+  <div class="rail-foot"><p><strong>Free plan</strong> · 2 of 3 analyses used this month</p></div>
+</nav>
+
+    <main class="main">
+      <button class="rail-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      
+  <div class="topbar">
+    <div class="identity">
+      <div class="avatar" id="candidateInitials">AR</div>
+      <div>
+        <h1 id="candidateName">Aditi Rao</h1>
+        <div class="identity-meta">
+          <span class="chip mono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Aditi_Rao_Resume.pdf</span>
+          <span class="badge">Target: SDE-1 · Amazon</span>
+          <span class="chip">Analyzed Jul 19, 2026</span>
+          <span class="badge sample">Sample data</span>
+        </div>
+      </div>
+    </div>
+    <a href="upload.html" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+  </div>
+
+  <div class="stat-row">
+    <div class="card">
+      <div class="card-head"><span class="stat-label">Match score</span><span class="stat-status good">Strong match</span></div>
+      <div class="ring-wrap">
+        <div class="ring" data-pct="78" style="--ring-color:var(--good)">
+          <span class="ring-value">0%</span>
+        </div>
+        <div class="ring-note"><p>Resume aligns closely with the <strong>SDE-1, Amazon</strong> posting — ahead of 5 of 9 required skill areas.</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stat-label">Predicted role</span>
+      <div class="role-primary">Backend Software Engineer</div>
+      <div class="meter"><span data-target="91%"></span></div>
+      <div class="role-conf">91% confidence</div>
+      <div class="role-alt">
+        <span>Full-Stack Engineer</span><span>Platform Engineer</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stat-label">Predicted salary</span>
+      <div class="salary-figure">$134K<sup>median</sup></div>
+      <div class="band">
+        <div class="band-range" data-left="31.7%" data-target="39.2%" style="left:0;width:0"></div>
+        <div class="band-marker" data-left="45.0%"></div>
+      </div>
+      <div class="band-labels"><span>$80K</span><span>$118K–$165K market range</span><span>$200K</span></div>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="card">
+      <div class="card-head"><h2>Skill match breakdown</h2><a class="see-all" href="#">Export report</a></div>
+
+      <div class="skill-section">
+        <div class="skill-section-head"><span class="dot good"></span><h3>Matched skills</h3><span class="count">8 found</span></div>
+        <div class="chips">
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Python</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>REST APIs</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>SQL</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>AWS</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Docker</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Git</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Data Structures</span>
+          
+          <span class="skill-chip have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>System Design basics</span>
+          
+        </div>
+      </div>
+
+      <div class="skill-section">
+        <div class="skill-section-head"><span class="dot crit"></span><h3>Missing — recommended to learn</h3><span class="count">4 gaps</span></div>
+        <div class="chips">
+          
+          <span class="skill-chip gap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg><b>Kubernetes</b><span class="demand-tag">high demand</span></span>
+          
+          <span class="skill-chip gap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg><b>Kafka</b><span class="demand-tag">high demand</span></span>
+          
+          <span class="skill-chip gap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg><b>GraphQL</b><span class="demand-tag">medium demand</span></span>
+          
+          <span class="skill-chip gap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg><b>Terraform</b><span class="demand-tag">medium demand</span></span>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="col-stack">
+      <div class="card">
+        <div class="card-head"><h2>Job-fit tracker</h2><a class="see-all" href="#">+ Add posting</a></div>
+        
+        <div class="target-row">
+          <div class="target-role">
+            <a href="#">SDE-1 · Amazon <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
+            <p>Seattle, WA · Full-time</p>
+          </div>
+          <div class="target-meter"><div class="meter"><span data-target="74%" style="background:var(--good)"></span></div></div>
+          <span class="target-pct good">74%</span>
+        </div>
+        
+        <div class="target-row">
+          <div class="target-role">
+            <a href="#">Platform Engineer · Datadog <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
+            <p>New York, NY · Full-time</p>
+          </div>
+          <div class="target-meter"><div class="meter"><span data-target="68%" style="background:var(--good)"></span></div></div>
+          <span class="target-pct good">68%</span>
+        </div>
+        
+        <div class="target-row">
+          <div class="target-role">
+            <a href="#">Backend Engineer · Stripe <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
+            <p>Remote (US) · Full-time</p>
+          </div>
+          <div class="target-meter"><div class="meter"><span data-target="61%" style="background:var(--warn)"></span></div></div>
+          <span class="target-pct warn">61%</span>
+        </div>
+        
+        <div class="target-row">
+          <div class="target-role">
+            <a href="#">Software Engineer · Google <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></a>
+            <p>Mountain View, CA · Full-time</p>
+          </div>
+          <div class="target-meter"><div class="meter"><span data-target="52%" style="background:var(--warn)"></span></div></div>
+          <span class="target-pct warn">52%</span>
+        </div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
+        
+        <div class="demand-row">
+          <span class="demand-name">python</span>
+          <div class="demand-track"><div class="demand-fill" data-target="96%"></div></div>
+          <span class="demand-val">96</span>
+          <span class="coverage have">Have it</span>
+        </div>
+        
+        <div class="demand-row">
+          <span class="demand-name">sql</span>
+          <div class="demand-track"><div class="demand-fill" data-target="90%"></div></div>
+          <span class="demand-val">90</span>
+          <span class="coverage have">Have it</span>
+        </div>
+        
+        <div class="demand-row">
+          <span class="demand-name">aws</span>
+          <div class="demand-track"><div class="demand-fill" data-target="88%"></div></div>
+          <span class="demand-val">88</span>
+          <span class="coverage have">Have it</span>
+        </div>
+        
+        <div class="demand-row">
+          <span class="demand-name">kubernetes</span>
+          <div class="demand-track"><div class="demand-fill" data-target="81%"></div></div>
+          <span class="demand-val">81</span>
+          <span class="coverage gap">Gap</span>
+        </div>
+        
+        <div class="demand-row">
+          <span class="demand-name">docker</span>
+          <div class="demand-track"><div class="demand-fill" data-target="74%"></div></div>
+          <span class="demand-val">74</span>
+          <span class="coverage have">Have it</span>
+        </div>
+        
+        <div class="demand-row">
+          <span class="demand-name">kafka</span>
+          <div class="demand-track"><div class="demand-fill" data-target="58%"></div></div>
+          <span class="demand-val">58</span>
+          <span class="coverage gap">Gap</span>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+    </main>
+  </div>
+
+  <script src="../static/js/background.js"></script>
+  <script src="../static/js/nav.js"></script>
+  
+  <script src="../static/js/dashboard.js"></script>
+
+</body>
+</html>

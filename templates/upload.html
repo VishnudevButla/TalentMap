@@ -1,0 +1,63 @@
+{% extends "layouts/base_app.html" %}
+{% from "partials/icons.html" import check, upload as upload_icon %}
+
+{% block title %}New analysis — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/upload.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div class="identity">
+      <div>
+        <h1>Start a new analysis</h1>
+        <div class="identity-meta"><span class="chip">Resume + job description → match score, gaps, salary, and role prediction</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="upload-grid">
+    <div class="card">
+      <h2 style="margin-bottom:1.1rem">Resume &amp; job description</h2>
+
+      <form id="analysisForm">
+        <label class="dropzone" id="dropzone" for="resumeFile">
+          {{ upload_icon() }}
+          <h3>Drop your resume PDF here</h3>
+          <p>or <span class="browse">browse files</span> · PDF up to 10MB</p>
+          <input type="file" id="resumeFile" name="resume" accept="application/pdf" />
+        </label>
+        <div class="file-chip is-hidden" id="fileChip">{{ check() }}<span id="fileChipLabel"></span></div>
+
+        <div class="field">
+          <label for="jd">Job description</label>
+          <textarea id="jd" name="job_description" rows="6" placeholder="Paste the full job description text here…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="role">Target role</label><input id="role" name="target_role" type="text" placeholder="SDE-1" /></div>
+          <div class="field"><label for="company">Company</label><input id="company" name="company" type="text" placeholder="Amazon" /></div>
+        </div>
+
+        <button type="submit" id="analyzeBtn" class="btn-primary upload-cta">Analyze resume</button>
+        <p class="upload-note">Uploads your resume securely — the match, gap, and salary models are still training, so your dashboard will open with sample results for now.</p>
+        <div class="upload-error" id="uploadError"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:1.1rem">Analysis pipeline</h2>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-dot">1</div><div class="pipe-text"><h4>PDF parsing</h4><p>Extracts raw text, name, and section boundaries.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">2</div><div class="pipe-text"><h4>NLP &amp; entity extraction</h4><p>spaCy NER pulls skills, education, employers, and experience.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">3</div><div class="pipe-text"><h4>Embedding &amp; match scoring</h4><p>TF-IDF / BERT vectors compared via cosine similarity.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">4</div><div class="pipe-text"><h4>Role &amp; salary prediction</h4><p>Classification and regression models score fit and pay band.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">5</div><div class="pipe-text"><h4>Dashboard ready</h4><p>Results, gaps, and job-fit odds land on your dashboard.</p></div></div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/upload.js') }}"></script>
+{% endblock %}

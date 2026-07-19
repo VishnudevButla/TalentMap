@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New analysis — TalentMap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../static/css/tokens.css" />
+  <link rel="stylesheet" href="../static/css/base.css" />
+  <link rel="stylesheet" href="../static/css/components.css" />
+  
+  <link rel="stylesheet" href="../static/css/upload.css" />
+
+  <script src="../static/js/auth-guard.js"></script>
+</head>
+<body>
+  <div class="page-glow" aria-hidden="true"></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <div class="shell">
+    <nav class="rail" aria-label="Primary">
+  <div class="brand">
+    <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
+    <span class="brand-name">Talent<em>Map</em></span>
+  </div>
+  <ul class="navlist">
+    <li>
+      <a href="dashboard.html" >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="upload.html" >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        New analysis
+      </a>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          History
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+          Market trends
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+    <li>
+      <span class="disabled">
+        <span style="display:flex;align-items:center;gap:.7rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009.5 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9.5a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009.5 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9.5a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Settings
+        </span>
+        <span class="soon">Soon</span>
+      </span>
+    </li>
+  </ul>
+  <div class="rail-foot"><p><strong>Free plan</strong> · 2 of 3 analyses used this month</p></div>
+</nav>
+
+    <main class="main">
+      <button class="rail-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      
+  <div class="topbar">
+    <div class="identity">
+      <div>
+        <h1>Start a new analysis</h1>
+        <div class="identity-meta"><span class="chip">Resume + job description → match score, gaps, salary, and role prediction</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="upload-grid">
+    <div class="card">
+      <h2 style="margin-bottom:1.1rem">Resume &amp; job description</h2>
+
+      <form id="analysisForm">
+        <label class="dropzone" id="dropzone" for="resumeFile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+          <h3>Drop your resume PDF here</h3>
+          <p>or <span class="browse">browse files</span> · PDF up to 10MB</p>
+          <input type="file" id="resumeFile" name="resume" accept="application/pdf" />
+        </label>
+        <div class="file-chip is-hidden" id="fileChip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg><span id="fileChipLabel"></span></div>
+
+        <div class="field">
+          <label for="jd">Job description</label>
+          <textarea id="jd" name="job_description" rows="6" placeholder="Paste the full job description text here…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="role">Target role</label><input id="role" name="target_role" type="text" placeholder="SDE-1" /></div>
+          <div class="field"><label for="company">Company</label><input id="company" name="company" type="text" placeholder="Amazon" /></div>
+        </div>
+
+        <button type="submit" id="analyzeBtn" class="btn-primary upload-cta">Analyze resume</button>
+        <p class="upload-note">Uploads your resume securely — the match, gap, and salary models are still training, so your dashboard will open with sample results for now.</p>
+        <div class="upload-error" id="uploadError"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:1.1rem">Analysis pipeline</h2>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-dot">1</div><div class="pipe-text"><h4>PDF parsing</h4><p>Extracts raw text, name, and section boundaries.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">2</div><div class="pipe-text"><h4>NLP &amp; entity extraction</h4><p>spaCy NER pulls skills, education, employers, and experience.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">3</div><div class="pipe-text"><h4>Embedding &amp; match scoring</h4><p>TF-IDF / BERT vectors compared via cosine similarity.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">4</div><div class="pipe-text"><h4>Role &amp; salary prediction</h4><p>Classification and regression models score fit and pay band.</p></div></div>
+        <div class="pipe-step"><div class="pipe-dot">5</div><div class="pipe-text"><h4>Dashboard ready</h4><p>Results, gaps, and job-fit odds land on your dashboard.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+    </main>
+  </div>
+
+  <script src="../static/js/background.js"></script>
+  <script src="../static/js/nav.js"></script>
+  
+  <script src="../static/js/upload.js"></script>
+
+</body>
+</html>

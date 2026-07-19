@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     # MongoDB
     mongodb_uri: str
+    mongodb_username: str = ""
+    mongodb_password: str = ""
 
     # AWS S3
     aws_access_key_id: str
