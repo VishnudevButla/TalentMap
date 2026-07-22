@@ -9,8 +9,9 @@ if str(project_root) not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import registration, login, pages
-from app.step1_api import upload_resume_1, resume_analyze_2
+from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api
+from app.step1_api import upload_resume_1, resume_analyze_2, routes_history
+from app.step4_agent import routes_agent
 
 app = FastAPI(title="TalentMap API", version="1.0.0")
 main = app
@@ -33,6 +34,11 @@ app.include_router(login.router)
 app.include_router(pages.router)
 app.include_router(upload_resume_1.router, prefix="/api")
 app.include_router(resume_analyze_2.router, prefix="/api")
+app.include_router(routes_history.router, prefix="/api")
+app.include_router(activity_api.router, prefix="/api")
+app.include_router(settings_api.router, prefix="/api")
+app.include_router(dashboard_api.router, prefix="/api")
+app.include_router(routes_agent.router, prefix="/api")
 
 from fastapi.responses import RedirectResponse
 

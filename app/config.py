@@ -11,6 +11,7 @@ How it works:
 """
 
 from pathlib import Path
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Resolve .env relative to this file's location (app/ -> project root)
@@ -23,10 +24,9 @@ class Settings(BaseSettings):
         extra="ignore",          # silently skip any extra keys in .env
     )
 
-    # MongoDB
+    # MongoDB — the full connection string, credentials included, lives
+    # directly in .env. No separate username/password fields to splice in.
     mongodb_uri: str
-    mongodb_username: str = ""
-    mongodb_password: str = ""
 
     # AWS S3
     aws_access_key_id: str
@@ -38,5 +38,29 @@ class Settings(BaseSettings):
     secret_key: str = "changeme"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+
+    # Job board API — TODO(you): integrate a real provider (Adzuna, JSearch,
+    # Indeed Publisher, etc.) — see app/step4_agent/job_source_fetcher.py.
+    # All optional/default-disabled so the app boots with zero .env changes.
+    job_api_provider: Optional[str] = None
+    job_api_key: Optional[str] = None
+    job_api_base_url: Optional[str] = None
+
+    # Email (SMTP or SES) — TODO(you): wire real sending, see
+    # app/step4_agent/email_alerts.py. email_enabled is the master switch;
+    # it stays False (silently skips sending) until you turn it on.
+    email_enabled: bool = False
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_address: Optional[str] = None
+    ses_region: Optional[str] = None
+
+    # AI Job Agent scheduler — TODO(you): flip on once
+    # app/step4_agent/scheduler.py's start_scheduler() is actually wired up.
+    agent_scheduler_enabled: bool = False
+    agent_scan_interval_minutes: int = 60
+    agent_max_sources_per_scan: int = 3
 
 settings = Settings()

@@ -12,11 +12,13 @@ Flow:
    b. preprocess.py     → clean text for embeddings (and NER-safe version)
    c. ner_extractor.py  → extract skills, education, experience using Gemini
    d. embeddings.py     → generate vector embeddings for similarity scoring
-5. Run ML inference (stubs return placeholder values until models are trained):
-   a. predict.py        → predict job role + salary range
-6. Compute match score via weighted cosine similarity
-7. Save analysis results to analysis_collection
-8. Return structured results to client
+5. Compute match score via weighted cosine similarity
+6. Save analysis results to analysis_collection
+7. Return structured results to client
+
+Predicted role and salary are NOT computed here — they're derived from the
+user's real, ranked job matches instead. See
+app/services/market_insights.py, served by GET /api/dashboard/summary.
 """
 
 from datetime import datetime
@@ -35,6 +37,8 @@ from app.step2_nlp.embeddings_4 import (
     calculate_weighted_component_similarity,
     DEFAULT_WEIGHTS,
 )
+from app.schemas.result_schema import AnalysisResultResponse
+from app.services.activity_log import log_activity
 
 router = APIRouter()
 
@@ -69,7 +73,7 @@ def _jd_to_entities(job_description: str) -> dict:
 # Main route
 # ---------------------------------------------------------------------------
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=AnalysisResultResponse)
 async def analyze_resume(req: AnalyzeRequest):
     resume_id = req.resume_id
     job_description = req.job_description
@@ -127,26 +131,32 @@ async def analyze_resume(req: AnalyzeRequest):
         )
         match_score = round(similarity_result["weighted_average_score"])
         component_scores = similarity_result["individual_scores"]
+
+        # Real JD-vs-resume skill overlap: run NER on the JD text itself
+        # (same extractor, no new dependency) to get a comparable skill list.
+        jd_entity_dict = extract_entities(resume_text=job_description, job_description="")
+        jd_skills = jd_entity_dict.get("skills", [])
+        jd_skills_lower = {s.lower() for s in jd_skills}
+        resume_skills_lower = {s.lower() for s in resume_skills}
+        matched_skills = [s for s in resume_skills if s.lower() in jd_skills_lower]
+        missing_skills_raw = [s for s in jd_skills if s.lower() not in resume_skills_lower]
     else:
         # No JD provided → fall back to overall text embedding magnitude
         emb = get_embedding(embedding_text)
         match_score = 0
         component_scores = {}
+        matched_skills = resume_skills
+        missing_skills_raw = []
 
     # ------------------------------------------------------------------
-    # Step 5: ML inference (stubs — returns placeholder until models are trained)
+    # Step 5: Build result document
     # ------------------------------------------------------------------
+    # NOTE: predicted role and salary are no longer computed here. They're
+    # derived from the user's real, ranked job matches instead — see
+    # app/services/market_insights.py, served by GET /api/dashboard/summary.
+    match_score = max(0, min(100, match_score))
 
-    # ------------------------------------------------------------------
-    # Step 6: Build result document
-    # ------------------------------------------------------------------
-    # Determine JD-based skill gaps vs matched (simple keyword overlap)
-    
-
-    # Clamp match score to [0, 100]
-
-    # Determine status label
-    '''if match_score >= 70:
+    if match_score >= 70:
         match_status = "good"
         match_label = "Strong match"
     elif match_score >= 45:
@@ -174,44 +184,27 @@ async def analyze_resume(req: AnalyzeRequest):
         "entities": entities,
         "matched_skills": matched_skills[:12],          # cap for display
         "missing_skills": [
+            # TODO(you): "medium" is hardcoded until market_trends_data.py
+            # can score real demand from job_postings_collection.
             {"name": s, "demand": "medium"} for s in missing_skills_raw[:8]
         ],
-        "predicted_role": {
-            "title": predicted_role,
-            "confidence": 85,                            # placeholder until model is trained
-            "alternates": [],
-        },
-        "salary": {
-            "median": round(
-                (salary_prediction["predicted_salary_min"] +
-                 salary_prediction["predicted_salary_max"]) / 2 / 1000
-            ),
-            "axis_min": 60,
-            "axis_max": 200,
-            "market_min": round(salary_prediction["predicted_salary_min"] / 1000),
-            "market_max": round(salary_prediction["predicted_salary_max"] / 1000),
-        },
-    }'''
+    }
 
     # ------------------------------------------------------------------
     # Step 7: Save to analysis_collection
     # ------------------------------------------------------------------
-    '''insert_result = analysis_collection.insert_one(result_doc)
-    analysis_id = str(insert_result.inserted_id)'''
+    insert_result = analysis_collection.insert_one(result_doc)
+    result_doc["_id"] = str(insert_result.inserted_id)
+
+    log_activity(
+        user_id=result_doc["user_id"],
+        type="analysis",
+        message=f"Resume analyzed — {match_score}% match",
+        icon="file",
+        meta={"analysis_id": result_doc["_id"], "match_score": match_score},
+    )
 
     # ------------------------------------------------------------------
     # Step 8: Return structured result to client
     # ------------------------------------------------------------------
-    '''return {
-        "status": "SUCCESS",
-        "analysis_id": analysis_id,
-        "resume_id": resume_id,
-        "match_score": match_score,
-        "match_status": match_status,
-        "match_label": match_label,
-        "predicted_role": result_doc["predicted_role"],
-        "salary": result_doc["salary"],
-        "matched_skills": result_doc["matched_skills"],
-        "missing_skills": result_doc["missing_skills"],
-        "entities": entities,
-    }'''
+    return result_doc

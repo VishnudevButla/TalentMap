@@ -11,6 +11,14 @@
   <link rel="stylesheet" href="{{ url_for('static', path='css/base.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/components.css') }}" />
   {% block extra_css %}{% endblock %}
+  <script>
+    // Apply the persisted theme choice before paint (avoids a flash of the
+    // wrong theme). Set by static/js/settings.js on the Settings page.
+    (function () {
+      var t = localStorage.getItem('theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <script src="{{ url_for('static', path='js/auth-guard.js') }}"></script>
 </head>
 <body>

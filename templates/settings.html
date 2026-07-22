@@ -1,0 +1,91 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}Settings — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/settings.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div>
+      <h1>Settings</h1>
+      <p class="card-sub">Appearance, notifications, and connected integrations.</p>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+    <div class="card">
+      <div class="card-head"><h2>Appearance</h2></div>
+      <div class="settings-row">
+        <div>
+          <h3>Theme</h3>
+          <p>Switch between dark and light mode.</p>
+        </div>
+        <div class="theme-toggle" id="themeToggle" role="button" tabindex="0">
+          <span class="theme-option" data-theme-value="dark">Dark</span>
+          <span class="theme-option" data-theme-value="light">Light</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Notifications</h2></div>
+      <div class="settings-row">
+        <div>
+          <h3>Email me new job matches</h3>
+          <p>The AI Job Agent will send an email when it finds strong new matches.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="emailAlertsToggle" />
+          <span class="switch-track"></span>
+        </label>
+      </div>
+      <p class="settings-note" id="emailAlertsNote"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Integrations</h2></div>
+      <div class="settings-row">
+        <div>
+          <h3>Job board API</h3>
+          <p>Powers real listings in Top Job Matches and Market Trends.</p>
+        </div>
+        <span class="stat-status {{ 'good' if integrations.job_api_configured else 'warn' }}">
+          {{ 'Connected' if integrations.job_api_configured else 'Not configured' }}
+        </span>
+      </div>
+      {% if not integrations.job_api_configured %}
+      <p class="settings-note">TODO(you): set <code>job_api_provider</code> / <code>job_api_key</code> in <code>.env</code> — see app/step4_agent/job_source_fetcher.py.</p>
+      {% endif %}
+
+      <div class="settings-row" style="margin-top:1rem">
+        <div>
+          <h3>Email sending (SMTP/SES)</h3>
+          <p>Required for real Job Agent email alerts.</p>
+        </div>
+        <span class="stat-status {{ 'good' if integrations.email_configured else 'warn' }}">
+          {{ 'Connected' if integrations.email_configured else 'Not configured' }}
+        </span>
+      </div>
+      {% if not integrations.email_configured %}
+      <p class="settings-note">TODO(you): set <code>email_enabled</code> / <code>smtp_*</code> in <code>.env</code> — see app/step4_agent/email_alerts.py.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>AI Job Agent</h2></div>
+      <div class="settings-row">
+        <div>
+          <h3>Scan schedule, sources, and keywords</h3>
+          <p>Manage what the agent scans for and how often.</p>
+        </div>
+        <a href="/agent" class="see-all">Open agent settings →</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/settings.js') }}"></script>
+{% endblock %}

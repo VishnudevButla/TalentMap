@@ -12,6 +12,7 @@ from app.core.db import user_collection
 from app.core.templates import templates
 from app.schemas.resume_schema import UserCreate, UserResponse
 from app.core.security import hash_password
+from app.step4_agent.state import ensure_agent_state
 
 router = APIRouter()
 
@@ -42,7 +43,12 @@ async def register_user(user_in: UserCreate):
     }
     
     result = user_collection.insert_one(user_doc)
-    
+
     # Assign the inserted string id
     user_doc["_id"] = str(result.inserted_id)
+
+    # Seed a default AI Job Agent state so /agent and /api/agent/status work
+    # immediately for a brand-new user — real DB write, no external creds.
+    ensure_agent_state(user_doc["_id"])
+
     return user_doc

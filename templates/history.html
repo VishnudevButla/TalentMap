@@ -1,0 +1,29 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}Resume History — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div>
+      <h1>Resume History</h1>
+      <p class="card-sub">Every analysis you've run, most recent first.</p>
+    </div>
+    <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+  </div>
+
+  <div class="card">
+    <div id="historyList" class="history-list">
+      <div class="empty-state">
+        <p>Loading your history…</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/history.js') }}"></script>
+{% endblock %}

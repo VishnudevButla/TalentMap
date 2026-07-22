@@ -49,3 +49,7 @@ pydantic==2.7.4
 
 google-generativeai
 sentence_transformers
+
+# AI Job Agent scheduler — TODO(you): actually start it, see
+# app/step4_agent/scheduler.py's start_scheduler()
+APScheduler==3.10.4

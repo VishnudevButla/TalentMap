@@ -1,0 +1,70 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}AI Job Agent — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/agent.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div>
+      <h1>AI Job Agent</h1>
+      <p class="card-sub">Scans job sources on a schedule and matches them against your latest resume analysis.</p>
+    </div>
+    <div class="agent-controls">
+      <span class="stat-status" id="agentStatusBadge">—</span>
+      <label class="switch">
+        <input type="checkbox" id="agentActiveToggle" />
+        <span class="switch-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="agent-grid">
+    <div class="card">
+      <div class="card-head"><h2>Next scan</h2></div>
+      <div class="agent-countdown" id="agentCountdown" data-seconds="0">00:00:00</div>
+      <p class="card-sub">Counts down to the next automatic scan, based on your scan interval below.</p>
+      <button class="btn-primary btn-sm" id="scanNowBtn" style="margin-top:1rem">Scan now</button>
+      <p class="settings-note" id="scanNowNote"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Today</h2></div>
+      <div class="agent-stats">
+        <div><span class="agent-stat-value" id="statJobsScanned">0</span><span class="agent-stat-label">Jobs Scanned</span></div>
+        <div><span class="agent-stat-value" id="statNewMatches">0</span><span class="agent-stat-label">New Matches</span></div>
+        <div><span class="agent-stat-value" id="statEmailsSent">0</span><span class="agent-stat-label">Emails Sent</span></div>
+        <div><span class="agent-stat-value" id="statSources">0</span><span class="agent-stat-label">Sources Monitored</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Scan interval</h2></div>
+      <div class="settings-row">
+        <p class="card-sub" style="margin:0">How often the agent scans for new postings.</p>
+        <select id="scanIntervalSelect" class="agent-select">
+          <option value="30">Every 30 min</option>
+          <option value="60">Every hour</option>
+          <option value="240">Every 4 hours</option>
+          <option value="1440">Once a day</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Sources</h2></div>
+      <p class="settings-note">
+        TODO(you): only a placeholder "default" source exists until a real job-board
+        API is wired in app/step4_agent/job_source_fetcher.py — see /settings for
+        connection status.
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/agent-countdown.js') }}"></script>
+  <script src="{{ url_for('static', path='js/agent.js') }}"></script>
+{% endblock %}

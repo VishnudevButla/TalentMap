@@ -1,0 +1,28 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}Activity — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/activity.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div>
+      <h1>Activity</h1>
+      <p class="card-sub">Everything TalentMap has done on your behalf.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="activityFeed" class="activity-feed">
+      <div class="empty-state">
+        <p>Loading activity…</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/activity.js') }}"></script>
+{% endblock %}

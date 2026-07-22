@@ -1,12 +1,14 @@
 """
 app/services/dashboard_data.py — Dashboard context builder.
 
-The NLP/ML pipeline (app/step2_nlp, app/step3_ml) is not wired up yet, so
-`get_sample_dashboard_context` returns realistic placeholder data shaped
-exactly like a real analysis result. Once app/step1_api/2_resume_analyze.py
-is implemented, replace the call in app/routers/pages.py with a function
-that loads the stored result for the given user/resume and returns the
-same shape.
+`get_sample_dashboard_context` returns illustrative placeholder data,
+shaped like a real dashboard payload, for the server-rendered pre-hydration
+state (see templates/dashboard.html). Real values are fetched client-side
+from GET /api/dashboard/summary (app/routers/dashboard_api.py) and swap
+these in — see static/js/dashboard.js's hydrateFromSummary(). Note:
+predicted_role/salary below are just illustrative sample numbers, not ML
+output — the real equivalents are derived from actual job matches by
+app/services/market_insights.py.
 """
 
 from typing import Any, Dict
@@ -77,5 +79,27 @@ def get_sample_dashboard_context(user_id: str) -> Dict[str, Any]:
             {"name": "kubernetes", "score": 81, "have": False},
             {"name": "docker", "score": 74, "have": True},
             {"name": "kafka", "score": 58, "have": False},
+        ],
+        "ai_jobs_found_today": 17,
+        "ai_jobs_found_delta": "+5 new since last scan",
+        "job_matches": [
+            {"title": "SDE-1 - Backend Engineer", "company": "Amazon", "location": "Seattle, WA", "work_type": "Full-time", "remote_type": "onsite", "match_score": 94, "status": "excellent", "posted": "2h ago", "url": "#"},
+            {"title": "Software Engineer", "company": "Google", "location": "Mountain View, CA", "work_type": "Full-time", "remote_type": "onsite", "match_score": 91, "status": "excellent", "posted": "5h ago", "url": "#"},
+            {"title": "Platform Engineer", "company": "Datadog", "location": "New York, NY", "work_type": "Full-time", "remote_type": "onsite", "match_score": 88, "status": "good", "posted": "8h ago", "url": "#"},
+            {"title": "Backend Developer", "company": "NVIDIA", "location": "Remote", "work_type": "Full-time", "remote_type": "remote", "match_score": 87, "status": "good", "posted": "10h ago", "url": "#"},
+        ],
+        "agent": {
+            "is_active": True,
+            "next_scan_in_seconds": 6495,
+            "jobs_scanned_today": 1462,
+            "new_matches_today": 14,
+            "emails_sent_today": 5,
+            "sources_monitored": 7,
+        },
+        "activity": [
+            {"icon": "mail", "message": "Email alert sent — 5 new high match jobs", "time": "2h ago"},
+            {"icon": "briefcase", "message": "New matches found — 14 job matches added", "time": "3h ago"},
+            {"icon": "file", "message": "Resume analyzed — Score improved by 12%", "time": "1d ago"},
+            {"icon": "mail", "message": "Email alert sent — 8 new high match jobs", "time": "1d ago"},
         ],
     }

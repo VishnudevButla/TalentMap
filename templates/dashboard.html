@@ -1,5 +1,5 @@
 {% extends "layouts/base_app.html" %}
-{% from "partials/icons.html" import check, plus, external_link, file %}
+{% from "partials/icons.html" import check, plus, external_link, file, mail, briefcase %}
 
 {% block title %}Dashboard — TalentMap{% endblock %}
 
@@ -54,6 +54,76 @@
       </div>
       <div class="band-labels"><span>${{ salary.axis_min }}K</span><span>${{ salary.market_min }}K–${{ salary.market_max }}K market range</span><span>${{ salary.axis_max }}K</span></div>
     </div>
+
+    <div class="card">
+      <span class="stat-label">AI jobs found today</span>
+      <div class="stat-figure" id="aiJobsFoundToday">{{ ai_jobs_found_today }}</div>
+      <p class="stat-caption">High match opportunities</p>
+      <p class="stat-caption stat-caption-good">{{ ai_jobs_found_delta }}</p>
+    </div>
+  </div>
+
+  <div class="jobs-grid">
+    <div class="card">
+      <div class="card-head">
+        <h2>Top job matches for you</h2>
+        <a class="see-all" href="/agent">View all matches →</a>
+      </div>
+      <div class="filter-pills" id="jobFilterPills">
+        <span class="pill is-active" data-filter="all">All</span>
+        <span class="pill" data-filter="excellent">Excellent</span>
+        <span class="pill" data-filter="good">Good</span>
+        <span class="pill" data-filter="remote">Remote</span>
+      </div>
+      <div class="job-list" id="jobList">
+        {% for job in job_matches %}
+        <div class="job-row" data-status="{{ job.status }}" data-remote="{{ job.remote_type }}">
+          <div class="job-logo">{{ job.company[0] }}</div>
+          <div class="job-main">
+            <a href="{{ job.url }}">{{ job.title }} {{ external_link() }}</a>
+            <p>{{ job.company }} · {{ job.location }} · {{ job.work_type }}</p>
+          </div>
+          <span class="stat-status {{ job.status }}">{{ job.match_score }}% Match</span>
+          <a href="{{ job.url }}" class="btn-primary btn-sm" style="text-decoration:none">Apply</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-stack">
+      <div class="card">
+        <div class="card-head">
+          <h2>AI Job Agent</h2>
+          <span class="stat-status {{ 'good' if agent.is_active else 'warn' }}">{{ 'Active' if agent.is_active else 'Paused' }}</span>
+        </div>
+        <p class="card-sub" style="margin:0 0 .3rem">Next scan in</p>
+        <div class="agent-countdown" id="agentCountdown" data-seconds="{{ agent.next_scan_in_seconds }}">00:00:00</div>
+        <div class="agent-stats">
+          <div><span class="agent-stat-value">{{ agent.jobs_scanned_today }}</span><span class="agent-stat-label">Jobs Scanned</span></div>
+          <div><span class="agent-stat-value">{{ agent.new_matches_today }}</span><span class="agent-stat-label">New Matches</span></div>
+          <div><span class="agent-stat-value">{{ agent.emails_sent_today }}</span><span class="agent-stat-label">Emails Sent</span></div>
+          <div><span class="agent-stat-value">{{ agent.sources_monitored }}</span><span class="agent-stat-label">Sources</span></div>
+        </div>
+        <a class="see-all" href="/agent" style="display:inline-block;margin-top:1rem">View agent settings →</a>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Recent activity</h2><a class="see-all" href="/activity">View all</a></div>
+        <div class="activity-feed">
+          {% for item in activity %}
+          <div class="activity-row">
+            <div class="activity-icon">
+              {% if item.icon == 'mail' %}{{ mail() }}{% elif item.icon == 'briefcase' %}{{ briefcase() }}{% else %}{{ file() }}{% endif %}
+            </div>
+            <div class="activity-body">
+              <div class="activity-message">{{ item.message }}</div>
+              <div class="activity-time">{{ item.time }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="body-grid">
@@ -79,36 +149,23 @@
       </div>
     </div>
 
-    <div class="col-stack">
-      <div class="card">
-        <div class="card-head"><h2>Job-fit tracker</h2><a class="see-all" href="#">+ Add posting</a></div>
-        {% for job in target_roles %}
-        <div class="target-row">
-          <div class="target-role">
-            <a href="{{ job.link }}">{{ job.role }} · {{ job.company }} {{ external_link() }}</a>
-            <p>{{ job.location }}</p>
-          </div>
-          <div class="target-meter"><div class="meter"><span data-target="{{ job.pct }}%" style="background:var(--{{ job.status }})"></span></div></div>
-          <span class="target-pct {{ job.status }}">{{ job.pct }}%</span>
-        </div>
-        {% endfor %}
+    <div class="card">
+      <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
+      {% for skill in demand_skills %}
+      <div class="demand-row">
+        <span class="demand-name">{{ skill.name }}</span>
+        <div class="demand-track"><div class="demand-fill" data-target="{{ skill.score }}%"></div></div>
+        <span class="demand-val">{{ skill.score }}</span>
+        <span class="coverage {{ 'have' if skill.have else 'gap' }}">{{ 'Have it' if skill.have else 'Gap' }}</span>
       </div>
-
-      <div class="card">
-        <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
-        {% for skill in demand_skills %}
-        <div class="demand-row">
-          <span class="demand-name">{{ skill.name }}</span>
-          <div class="demand-track"><div class="demand-fill" data-target="{{ skill.score }}%"></div></div>
-          <span class="demand-val">{{ skill.score }}</span>
-          <span class="coverage {{ 'have' if skill.have else 'gap' }}">{{ 'Have it' if skill.have else 'Gap' }}</span>
-        </div>
-        {% endfor %}
-      </div>
+      {% endfor %}
     </div>
   </div>
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{{ url_for('static', path='js/agent-countdown.js') }}"></script>
+  <script src="{{ url_for('static', path='js/job-filters.js') }}"></script>
+  <script src="{{ url_for('static', path='js/activity.js') }}"></script>
   <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,35 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}Market Trends — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <div>
+      <h1>Market Trends</h1>
+      <p class="card-sub">
+        Skill demand across {{ postings_analyzed }} tracked postings
+        {% if is_sample %}<span class="badge sample">Sample data</span>{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
+    {% for skill in demand_skills %}
+    <div class="demand-row">
+      <span class="demand-name">{{ skill.name }}</span>
+      <div class="demand-track"><div class="demand-fill" data-target="{{ skill.score }}%"></div></div>
+      <span class="demand-val">{{ skill.score }}</span>
+      <span class="coverage {{ 'have' if skill.have else 'gap' }}">{{ 'Have it' if skill.have else 'Gap' }}</span>
+    </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+{% endblock %}
