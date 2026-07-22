@@ -28,17 +28,29 @@ straight to app.core.db.job_postings_collection.update_one(..., upsert=True):
 }
 """
 
+import logging
 from typing import Any, Dict, List
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def fetch_jobs_from_source(source: str, keywords: List[str]) -> List[Dict[str, Any]]:
+    logger.info("Job fetcher started: source=%s", source)
+
     if not settings.job_api_key:
-        print(f"[job_source_fetcher] No job_api_key configured — skipping source '{source}'.")
+        logger.warning("Job fetcher skipped: no job_api_key configured for source=%s", source)
         return []
 
     # TODO(you): call the real API here using settings.job_api_provider /
     # settings.job_api_key / settings.job_api_base_url, and map its response
     # into the JobPosting shape documented above.
-    return []
+    results: List[Dict[str, Any]] = []
+
+    if results:
+        logger.info("Job fetcher completed: source=%s jobs_found=%d", source, len(results))
+    else:
+        logger.warning("No jobs returned from job provider (source=%s)", source)
+
+    return results

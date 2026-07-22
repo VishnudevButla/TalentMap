@@ -1,4 +1,5 @@
 import sys
+import logging
 from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request, status
@@ -14,6 +15,8 @@ from app.schemas.resume_schema import UserCreate, UserResponse
 from app.core.security import hash_password
 from app.step4_agent.state import ensure_agent_state
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 @router.get("/register")
@@ -27,6 +30,8 @@ async def register_user(user_in: UserCreate):
     # Check if user already exists
     existing_user = user_collection.find_one({"email": email})
     if existing_user:
+        # Never log the submitted email — personal info, same rule as login.
+        logger.info("Registration rejected: email already exists")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this email already exists."
@@ -50,5 +55,7 @@ async def register_user(user_in: UserCreate):
     # Seed a default AI Job Agent state so /agent and /api/agent/status work
     # immediately for a brand-new user — real DB write, no external creds.
     ensure_agent_state(user_doc["_id"])
+
+    logger.info("New user registered: user_id=%s", user_doc["_id"])
 
     return user_doc

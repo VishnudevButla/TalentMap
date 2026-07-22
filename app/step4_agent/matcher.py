@@ -9,12 +9,15 @@ job_postings_collection is empty until job_source_fetcher.py is wired to a
 real source — this file itself is fully working.
 """
 
+import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
 from app.core.db import analysis_collection, job_postings_collection, job_matches_collection
 from app.services.activity_log import log_activity
 from app.step2_nlp.embeddings_4 import embed_components, calculate_weighted_component_similarity, DEFAULT_WEIGHTS
+
+logger = logging.getLogger(__name__)
 
 
 def _status_for_score(score: int) -> str:
@@ -61,6 +64,7 @@ def run_matching_for_user(user_id: str) -> List[Dict[str, Any]]:
     resume_components = embed_components(latest_analysis.get("entities", {}))
 
     postings = list(job_postings_collection.find({}))
+    logger.info("Matcher started: user_id=%s postings=%d", user_id, len(postings))
     new_matches = []
 
     for job_doc in postings:
@@ -94,4 +98,5 @@ def run_matching_for_user(user_id: str) -> List[Dict[str, Any]]:
                 meta={"job_id": job_id, "match_score": result["score"]},
             )
 
+    logger.info("Matcher completed: user_id=%s new_matches=%d", user_id, len(new_matches))
     return new_matches

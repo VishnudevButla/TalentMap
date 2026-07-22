@@ -30,12 +30,15 @@ Dependencies:
 - passlib for password hashing (bcrypt)
 """
 
+import logging
 import bcrypt
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -52,7 +55,9 @@ def verify_password(plain: str, hashed: str) -> bool:
         pwd_bytes = plain.encode('utf-8')
         hashed_bytes = hashed.encode('utf-8')
         return bcrypt.checkpw(pwd_bytes, hashed_bytes)
-    except Exception:
+    except Exception as exc:
+        # Never log `plain`/`hashed` — just the fact that verification errored.
+        logger.warning("Password verification error: %s", exc)
         return False
 
 def create_access_token(data: dict) -> str:
@@ -77,5 +82,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
         if user_id is None:
             raise credentials_exception
         return user_id
-    except JWTError:
+    except JWTError as exc:
+        # Never log the raw token — just that validation failed and why.
+        logger.warning("JWT validation failed: %s", exc)
         raise credentials_exception

@@ -7,17 +7,26 @@ This module is responsible for:
 3. Computing weighted similarity across resume components.
 """
 
+import logging
+import time
 from typing import Dict, Any
 import numpy as np
 # pyrefly: ignore [missing-import]
 from sentence_transformers import SentenceTransformer
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 # Load the Sentence-BERT model once when the module is imported.
 # --------------------------------------------------------------------
 
 MODEL_NAME = "all-MiniLM-L6-v2"
+logger.info("Loading sentence-transformer model: %s", MODEL_NAME)
+_model_load_start = time.perf_counter()
 model = SentenceTransformer(MODEL_NAME)
+logger.info(
+    "Sentence-transformer model loaded in %.1fs", time.perf_counter() - _model_load_start
+)
 
 
 # --------------------------------------------------------------------
@@ -177,6 +186,8 @@ def embed_components(
             text = str(values)
 
         components[key] = get_embedding(text)
+
+    logger.debug("Generated embeddings for components: %s", list(components.keys()))
 
     return components
 

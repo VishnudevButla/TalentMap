@@ -6,10 +6,13 @@ dashboard's Recent Activity feed calls log_activity(). Real, no external
 credentials involved.
 """
 
+import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 
 from app.core.db import activity_log_collection
+
+logger = logging.getLogger(__name__)
 
 
 def log_activity(user_id: str, type: str, message: str, icon: str = "info", meta: Optional[Dict[str, Any]] = None) -> None:
@@ -21,3 +24,4 @@ def log_activity(user_id: str, type: str, message: str, icon: str = "info", meta
         "created_at": datetime.utcnow(),
         "meta": meta or {},
     })
+    logger.debug("Activity logged: user_id=%s type=%s", user_id, type)

@@ -7,6 +7,10 @@ structured entities as JSON, instead of spaCy pattern matching.
 
 import os
 import json
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 # Load .env so GEMINI_API_KEY is available even when not set in the shell
 try:
@@ -96,22 +100,28 @@ def extract_entities(resume_text: str, job_description: str) -> dict:
     try:
         llm = _get_model()
     except EnvironmentError as exc:
-        print(f"WARNING: NER skipped — {exc}")
+        logger.warning("NER skipped: %s", exc)
         return _empty
 
+    # Never log `prompt` — it embeds the full resume/JD text.
     prompt = PROMPT_TEMPLATE.format(
         job_description=job_description,
         resume_text=resume_text,
     )
 
     try:
+        start = time.perf_counter()
         response = llm.generate_content(prompt)   # send prompt to Gemini
+        duration = time.perf_counter() - start
+        logger.info("Gemini entity extraction completed in %.1f seconds", duration)
+
         raw_output = response.text.strip()
         raw_output = raw_output.replace("```json", "").replace("```", "").strip()
         return json.loads(raw_output)             # convert JSON text → Python dict
     except Exception as exc:
-        # LLM didn't return clean JSON or network error — fail safely
-        print(f"WARNING: NER extraction failed — {exc}")
+        # LLM didn't return clean JSON or network error — fail safely,
+        # same fallback behavior as before, now with a full traceback logged.
+        logger.exception("NER extraction failed")
         return {
             **_empty,
             "_error": str(exc),

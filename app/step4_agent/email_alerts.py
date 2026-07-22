@@ -12,17 +12,21 @@ Two ways to send, both already available without new dependencies:
     settings.ses_region and boto3.client("ses")
 """
 
+import logging
 from typing import Any, Dict, List
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool:
+    # Never log `to_email` — it's PII, same rule as everywhere else in the app.
     if not settings.email_enabled:
-        print(f"[email_alerts] Email sending disabled — skipping alert to {to_email} ({len(matches)} matches).")
+        logger.debug("Email sending disabled — skipping alert (%d matches)", len(matches))
         return False
 
     # TODO(you): build the email body from `matches` and send via smtplib or
     # boto3 SES using the settings.smtp_*/ses_region config above.
-    print(f"[email_alerts] email_enabled=True but sending is not implemented yet — skipping {to_email}.")
+    logger.warning("email_enabled=True but sending is not implemented yet — skipping alert")
     return False

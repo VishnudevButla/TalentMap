@@ -11,6 +11,7 @@ start_scheduler() is the TODO(you) piece: nothing currently calls
 run_scan_cycle() automatically on a timer.
 """
 
+import logging
 from datetime import datetime
 from typing import Any, Dict
 
@@ -23,6 +24,8 @@ from app.step4_agent.job_source_fetcher import fetch_jobs_from_source
 from app.step4_agent.matcher import run_matching_for_user
 from app.step4_agent.email_alerts import send_match_alert_email
 from app.services.activity_log import log_activity
+
+logger = logging.getLogger(__name__)
 
 
 def _upsert_postings(raw_postings) -> int:
@@ -38,6 +41,8 @@ def _upsert_postings(raw_postings) -> int:
 
 
 async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
+    logger.info("Scheduler execution started: user_id=%s", user_id)
+
     doc = agent_state.ensure_agent_state(user_id, settings.agent_scan_interval_minutes)
     sources = doc.get("sources_monitored", ["default"])[: settings.agent_max_sources_per_scan]
 
@@ -53,6 +58,7 @@ async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
         try:
             user_doc = user_collection.find_one({"_id": ObjectId(user_id)}) or {}
         except Exception:
+            logger.warning("Could not look up user for email alert: user_id=%s", user_id)
             user_doc = {}
         to_email = user_doc.get("email")
         if new_matches and to_email and settings.email_enabled:
@@ -69,9 +75,15 @@ async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
             message=f"Agent scan complete — {jobs_scanned} jobs scanned, {len(new_matches)} new matches",
             icon="briefcase",
         )
+
+        logger.info(
+            "Scheduler execution completed: user_id=%s jobs_scanned=%d new_matches=%d",
+            user_id, jobs_scanned, len(new_matches),
+        )
         return updated_state
 
     except Exception as exc:  # keep the agent resilient — one bad scan shouldn't wedge the state
+        logger.exception("Scheduler execution failed: user_id=%s", user_id)
         return agent_state.advance_scan_clock(
             user_id, jobs_scanned=jobs_scanned, new_matches=0, emails_sent=0,
             status="error", last_error=str(exc),
@@ -84,18 +96,17 @@ def start_scheduler(app) -> None:
     ready for the AI Job Agent to actually run periodically:
 
     1. `pip install apscheduler` (already listed in requirements.txt).
-    2. In app/main.py, switch to FastAPI's lifespan context manager and
-       call this function on startup:
+    2. app/main.py already has a `lifespan` context manager (added for
+       startup/shutdown logging) — call this function from inside it:
 
-         from contextlib import asynccontextmanager
          from app.step4_agent.scheduler import start_scheduler
 
          @asynccontextmanager
          async def lifespan(app: FastAPI):
+             logger.info("TalentMap API starting up")
              start_scheduler(app)
              yield
-
-         app = FastAPI(title="TalentMap API", version="1.0.0", lifespan=lifespan)
+             logger.info("TalentMap API shutting down")
 
     3. Implement start_scheduler() itself, e.g.:
 
@@ -120,7 +131,9 @@ def start_scheduler(app) -> None:
     whole pipeline works.
     """
     if not settings.agent_scheduler_enabled:
-        print("[scheduler] agent_scheduler_enabled=False — AI Job Agent will not run automatically. "
-              "Use POST /api/agent/scan-now, or see start_scheduler()'s docstring to wire a real scheduler.")
+        logger.info(
+            "AI Job Agent scheduler disabled (agent_scheduler_enabled=False) — "
+            "use POST /api/agent/scan-now, or see start_scheduler()'s docstring to wire a real scheduler."
+        )
         return
     raise NotImplementedError("start_scheduler() TODO(you): see docstring above.")

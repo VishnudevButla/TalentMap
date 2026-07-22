@@ -63,4 +63,7 @@ class Settings(BaseSettings):
     agent_scan_interval_minutes: int = 60
     agent_max_sources_per_scan: int = 3
 
+    # Logging — see app/core/logger.py. One of DEBUG/INFO/WARNING/ERROR/CRITICAL.
+    log_level: str = "INFO"
+
 settings = Settings()

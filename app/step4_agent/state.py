@@ -5,10 +5,13 @@ Real DB reads/writes against agent_state_collection, no external
 credentials involved.
 """
 
+import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from app.core.db import agent_state_collection
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_SOURCES = ["default"]  # TODO(you): populate with real source names
                                 # once job_source_fetcher.py supports more
@@ -72,6 +75,7 @@ def advance_scan_clock(
         "last_error": last_error,
     }
     agent_state_collection.update_one({"user_id": user_id}, {"$set": updated}, upsert=True)
+    logger.debug("Agent state updated: user_id=%s status=%s", user_id, status)
     return {**doc, **updated}
 
 
@@ -86,4 +90,5 @@ def update_agent_settings(user_id: str, is_active: bool = None, scan_interval_mi
         updates["next_scan_at"] = datetime.utcnow() + timedelta(minutes=scan_interval_minutes)
     if updates:
         agent_state_collection.update_one({"user_id": user_id}, {"$set": updates}, upsert=True)
+        logger.info("Agent settings updated: user_id=%s is_active=%s", user_id, is_active)
     return {**doc, **updates}

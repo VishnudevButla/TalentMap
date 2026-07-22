@@ -1,4 +1,5 @@
 import sys
+import logging
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request, status
 
@@ -12,6 +13,8 @@ from app.core.templates import templates
 from app.schemas.resume_schema import UserLogin
 from app.core.security import verify_password, create_access_token
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 @router.get("/login")
@@ -24,20 +27,24 @@ async def login_user(user_in: UserLogin):
     
     user = user_collection.find_one({"email": email})
     if not user:
+        # Never log the submitted email — treat it as personal info like anything else.
+        logger.warning("Failed login attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password."
         )
-    
+
     if not verify_password(user_in.password, user.get("hashed_password", "")):
+        logger.warning("Failed login attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password."
         )
-    
+
     # Generate JWT
     access_token = create_access_token(data={"sub": str(user["_id"])})
-    
+    logger.info("User logged in: user_id=%s", str(user["_id"]))
+
     return {
         "access_token": access_token,
         "token_type": "bearer",

@@ -17,10 +17,13 @@ Two main functions used across the app:
 S3 client is initialized once at module load using credentials from config.py
 """
 
+import logging
 from botocore.exceptions import ClientError
 import boto3
 import uuid
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 s3 = boto3.client(
     "s3",
@@ -31,22 +34,31 @@ s3 = boto3.client(
 
 def upload_file(file_data: bytes, filename: str) -> str:
     key = f"resumes/{uuid.uuid4()}_{filename}"
-    s3.put_object(
-        Bucket=settings.aws_bucket_name,
-        Key=key,
-        Body=file_data
-    )
+    try:
+        s3.put_object(
+            Bucket=settings.aws_bucket_name,
+            Key=key,
+            Body=file_data
+        )
+    except ClientError as e:
+        logger.error("S3 upload failed: key=%s error=%s", key, e)
+        raise
+    logger.info("Uploaded file to S3: key=%s", key)
     return key
 
 def get_presigned_url(s3_key: str, expires: int = 3600) -> str:
-    return s3.generate_presigned_url(
-        ClientMethod="get_object",
-        Params={
-            "Bucket": settings.aws_bucket_name,
-            "Key": s3_key
-        },
-        ExpiresIn=expires
-    )
+    try:
+        return s3.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={
+                "Bucket": settings.aws_bucket_name,
+                "Key": s3_key
+            },
+            ExpiresIn=expires
+        )
+    except ClientError as e:
+        logger.error("S3 presigned URL generation failed: key=%s error=%s", s3_key, e)
+        raise
 
 def download_file(s3_key: str) -> bytes:
     """
@@ -68,6 +80,7 @@ def download_file(s3_key: str) -> bytes:
         return response["Body"].read()
 
     except ClientError as e:
+        logger.error("S3 download failed: key=%s error=%s", s3_key, e)
         raise RuntimeError(f"Failed to download file: {e}")
 
 ## WE CAN USE THIS TO ACCESS THE RESUME FROM THE URL.......WE'll uncomment it while checking S3
