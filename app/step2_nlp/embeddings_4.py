@@ -17,10 +17,10 @@ from sentence_transformers import SentenceTransformer
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
-# Load the Sentence-BERT model once when the module is imported.
+# Load the BGE embedding model once when the module is imported.
 # --------------------------------------------------------------------
 
-MODEL_NAME = "all-MiniLM-L6-v2"
+MODEL_NAME = "BAAI/bge-base-en-v1.5"
 logger.info("Loading sentence-transformer model: %s", MODEL_NAME)
 _model_load_start = time.perf_counter()
 model = SentenceTransformer(MODEL_NAME)
@@ -28,24 +28,36 @@ logger.info(
     "Sentence-transformer model loaded in %.1fs", time.perf_counter() - _model_load_start
 )
 
+# BGE models recommend a query instruction prefix for asymmetric search
+# (e.g. short query text vs. longer passage text). Since job descriptions
+# often act as the "query" being matched against resume "passages", this
+# prefix is applied optionally via the `is_query` flag in get_embedding().
+BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
+
 
 # --------------------------------------------------------------------
 # Embedding Generation
 # --------------------------------------------------------------------
 
-def get_embedding(text: str) -> np.ndarray:
+def get_embedding(text: str, is_query: bool = False) -> np.ndarray:
     """
-    Generates a Sentence-BERT embedding for the given text.
+    Generates a BGE embedding for the given text.
 
     Args:
         text (str): Input text.
+        is_query (bool): If True, prepends the BGE query instruction
+            prefix. Use this for job description text when comparing
+            against resume text. Leave False for resume/passage text.
 
     Returns:
-        np.ndarray: 384-dimensional embedding vector.
+        np.ndarray: 768-dimensional embedding vector.
     """
 
     if not text or not text.strip():
         return np.array([])
+
+    if is_query:
+        text = BGE_QUERY_PREFIX + text
 
     return model.encode(
         text,
@@ -152,7 +164,8 @@ def calculate_weighted_component_similarity(
 # --------------------------------------------------------------------
 
 def embed_components(
-    entities: Dict[str, Any]
+    entities: Dict[str, Any],
+    is_query: bool = False
 ) -> Dict[str, np.ndarray]:
     """
     Converts extracted resume/job entities into embeddings.
@@ -164,6 +177,11 @@ def embed_components(
         "projects": ["Resume Parser"],
         "certifications": ["AWS CCP"]
     }
+
+    Args:
+        entities: Extracted component text lists.
+        is_query: Pass True when embedding job description components,
+            False when embedding resume components.
 
     Returns:
         Dictionary with embeddings for each component.
@@ -185,7 +203,7 @@ def embed_components(
         else:
             text = str(values)
 
-        components[key] = get_embedding(text)
+        components[key] = get_embedding(text, is_query=is_query)
 
     logger.debug("Generated embeddings for components: %s", list(components.keys()))
 

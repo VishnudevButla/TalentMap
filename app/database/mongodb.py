@@ -16,3 +16,4 @@ db = _client["talentmap"]
 
 resume_collection = db["resumes"]
 user_collection = db["users"]
+job_collection = db["jobs"]

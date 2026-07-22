@@ -39,12 +39,12 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    # Job board API — TODO(you): integrate a real provider (Adzuna, JSearch,
-    # Indeed Publisher, etc.) — see app/step4_agent/job_source_fetcher.py.
-    # All optional/default-disabled so the app boots with zero .env changes.
-    job_api_provider: Optional[str] = None
-    job_api_key: Optional[str] = None
-    job_api_base_url: Optional[str] = None
+    #adzuna - used for searching for jobs
+    JOB_API_PROVIDER: str = "adzuna"
+    ADZUNA_APP_ID: str
+    ADZUNA_APP_KEY: str
+    ADZUNA_BASE_URL: str = "https://api.adzuna.com/v1/api"
+    REMOTEOK_BASE_URL: str = "https://remoteok.com/api"
 
     # Email (SMTP or SES) — TODO(you): wire real sending, see
     # app/step4_agent/email_alerts.py. email_enabled is the master switch;
@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     smtp_password: Optional[str] = None
     smtp_from_address: Optional[str] = None
     ses_region: Optional[str] = None
+
+    # Brevo API configuration
+    brevo_api_key: Optional[str] = None
+    brevo_sender_email: Optional[str] = None
+    brevo_sender_name: str = "TalentMap Alerts"
 
     # AI Job Agent scheduler — TODO(you): flip on once
     # app/step4_agent/scheduler.py's start_scheduler() is actually wired up.

@@ -33,6 +33,8 @@ SQLAlchemy==2.0.38
 # Utilities
 requests==2.32.5
 python-multipart==0.0.22
+spacy==3.7.5
+en-core-web-sm==3.7.1
 
 # Frontend Dashboard
 streamlit==1.35.0
@@ -49,6 +51,9 @@ pydantic==2.7.4
 
 google-generativeai
 sentence_transformers
+
+#brevo
+sib-api-v3-sdk==7.6.0
 
 # AI Job Agent scheduler — TODO(you): actually start it, see
 # app/step4_agent/scheduler.py's start_scheduler()
