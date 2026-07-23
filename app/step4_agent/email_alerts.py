@@ -1,9 +1,10 @@
 """
 app/step4_agent/email_alerts.py — Job Match Email Alerts
 
-Sends transactional match emails to users using either:
-  1. The Brevo REST API (using settings.brevo_api_key)
-  2. Standard SMTP relay (using settings.smtp_host/port/username/password)
+Sends transactional match emails to users using:
+  1. Resend API (if settings.resend_api_key is configured)
+  2. Brevo API (if settings.brevo_api_key is configured)
+  3. Standard SMTP relay (using settings.smtp_host/port/username/password)
 """
 
 import logging
@@ -12,8 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any, Dict, List
 
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
+import resend
 from bson import ObjectId
 
 from app.config import settings
@@ -154,42 +154,62 @@ def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool
     </html>
     """
 
-    # --- Option 1: Send via Brevo SDK ---
-    if settings.brevo_api_key:
-        logger.info("Sending email via Brevo transactional API (SDK)...")
-
-        # Configure the SDK with the API key from settings
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.brevo_api_key
-
-        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-            sib_api_v3_sdk.ApiClient(configuration)
-        )
-
-        sender_email = settings.brevo_sender_email or "alerts@talentmap.com"
-        sender_name = settings.brevo_sender_name or "TalentMap Alerts"
-
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-            sender={"name": sender_name, "email": sender_email},
-            to=[{"email": to_email}],
-            subject="Your Daily TalentMap Job Matches",
-            html_content=html_content,
-        )
-
+    # --- Option 1: Send via Resend API ---
+    if settings.resend_api_key:
+        logger.info("Sending email via Resend API...")
+        resend.api_key = settings.resend_api_key
+        from_address = settings.resend_from_address or "onboarding@resend.dev"
+        
+        params = {
+            "from": from_address,
+            "to": [to_email],
+            "subject": "Your Daily TalentMap Job Matches",
+            "html": html_content,
+        }
+        
         try:
-            api_instance.send_transac_email(send_smtp_email)
-            logger.info("Brevo email sent successfully via SDK")
+            r = resend.Emails.send(params)
+            logger.info("Resend email sent successfully: %s", r)
             return True
-        except ApiException as exc:
-            logger.error(
-                "Brevo SDK ApiException: status=%s reason=%s body=%s",
-                exc.status, exc.reason, exc.body,
+        except Exception as exc:
+            logger.error("Failed to send email via Resend API: %s", exc)
+            if not (getattr(settings, "brevo_api_key", None) or settings.smtp_host):
+                return False
+
+    # --- Option 2: Send via Brevo API ---
+    brevo_key = getattr(settings, "brevo_api_key", None)
+    if brevo_key:
+        logger.info("Sending email via Brevo API...")
+        try:
+            import sib_api_v3_sdk
+            from sib_api_v3_sdk.rest import ApiException
+
+            configuration = sib_api_v3_sdk.Configuration()
+            configuration.api_key["api-key"] = settings.brevo_api_key
+
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                sib_api_v3_sdk.ApiClient(configuration)
             )
-            # Fall through to SMTP only if it is configured
+
+            sender_email = settings.brevo_sender_email or "alerts@talentmap.com"
+            sender_name = settings.brevo_sender_name or "TalentMap Alerts"
+
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                sender={"name": sender_name, "email": sender_email},
+                to=[{"email": to_email}],
+                subject="Your Daily TalentMap Job Matches",
+                html_content=html_content,
+            )
+
+            api_instance.send_transac_email(send_smtp_email)
+            logger.info("Brevo email sent successfully")
+            return True
+        except Exception as exc:
+            logger.error("Failed to send email via Brevo API: %s", exc)
             if not settings.smtp_host:
                 return False
 
-    # --- Option 2: Send via standard SMTP ---
+    # --- Option 3: Send via standard SMTP ---
     if settings.smtp_host:
         logger.info("Sending email via SMTP relay (%s)...", settings.smtp_host)
         
@@ -215,5 +235,5 @@ def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool
             logger.error("Failed to send email via SMTP: %s", exc)
             return False
 
-    logger.warning("Neither Brevo API nor SMTP is configured. Email sending failed.")
+    logger.warning("No valid email provider (Resend, Brevo, SMTP) configured. Email sending failed.")
     return False

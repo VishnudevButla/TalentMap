@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     brevo_sender_email: Optional[str] = None
     brevo_sender_name: str = "TalentMap Alerts"
 
+    # Resend API configuration
+    resend_api_key: Optional[str] = None
+    resend_from_address: str = "onboarding@resend.dev"
+
     # AI Job Agent scheduler — TODO(you): flip on once
     # app/step4_agent/scheduler.py's start_scheduler() is actually wired up.
     agent_scheduler_enabled: bool = False
