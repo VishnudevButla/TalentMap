@@ -21,11 +21,13 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api
 from app.step1_api import upload_resume_1, resume_analyze_2, routes_history
 from app.step4_agent import routes_agent
+from app.step4_agent.scheduler import start_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("TalentMap API starting up")
+    start_scheduler(app)
     yield
     logger.info("TalentMap API shutting down")
 

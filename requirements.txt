@@ -4,6 +4,8 @@
 # AWS S3
 boto3==1.43.31
 
+resend==2.34.0
+
 # MongoDB
 pymongo[srv]==4.7.3
 
@@ -33,8 +35,6 @@ SQLAlchemy==2.0.38
 # Utilities
 requests==2.32.5
 python-multipart==0.0.22
-spacy==3.7.5
-en-core-web-sm==3.7.1
 
 # Frontend Dashboard
 streamlit==1.35.0

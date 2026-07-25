@@ -6,13 +6,8 @@ Ensures FastAPI endpoints return consistent, validated structures.
 
 Flow:
 1. Define NER results structure (skills, education, experience lists).
-2. Define Match scoring outcomes (similarity score against job descriptions).
+2. Define Match scoring outcomes.
 3. Define the unified AnalysisResultResponse schema.
-
-PredictedRoleInfo/SalaryBand are defined here too, but are no longer part
-of AnalysisResultResponse — they describe the shape returned by
-app/services/market_insights.py (derived from real job matches), consumed
-by GET /api/dashboard/summary.
 """
 
 from pydantic import BaseModel, Field
@@ -52,22 +47,6 @@ class MatchSummary(BaseModel):
     component_scores: Dict[str, float] = Field(default_factory=dict)
 
 
-class PredictedRoleInfo(BaseModel):
-    """Derived from the user's top-ranked job matches — see market_insights.py."""
-    title: str
-    confidence: float
-    alternates: List[str] = Field(default_factory=list)
-
-
-class SalaryBand(BaseModel):
-    """Derived from the user's top-ranked job matches — see market_insights.py."""
-    median: int
-    axis_min: int
-    axis_max: int
-    market_min: int
-    market_max: int
-
-
 class AnalysisResultResponse(BaseModel):
     """
     Complete consolidated result of NLP processing, matching the document
@@ -78,7 +57,10 @@ class AnalysisResultResponse(BaseModel):
     user_id: str
     filename: str
     analyzed_at: datetime
-    match: MatchSummary
+    # No longer computed at analyze time — there's no single JD to score
+    # against. The dashboard's match tile is derived from real job matches
+    # instead, see app/services/market_insights.py.get_current_match_summary.
+    match: Optional[MatchSummary] = None
     entities: NERResult
     matched_skills: List[str] = Field(default_factory=list)
     missing_skills: List[MissingSkill] = Field(default_factory=list)

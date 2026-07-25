@@ -29,7 +29,8 @@ async def upload_resume(
             "user_id": user_id,
             "filename": file.filename,
             "s3_key": s3_key,
-            "status": "uploaded"
+            "status": "uploaded",
+            "uploaded_at": datetime.utcnow(),
         }
 
         result = resume_collection.insert_one(document)

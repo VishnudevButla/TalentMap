@@ -66,11 +66,24 @@ class Settings(BaseSettings):
     resend_api_key: Optional[str] = None
     resend_from_address: str = "onboarding@resend.dev"
 
-    # AI Job Agent scheduler — TODO(you): flip on once
-    # app/step4_agent/scheduler.py's start_scheduler() is actually wired up.
+    # AI Job Agent scheduler — set agent_scheduler_enabled=true in .env to
+    # turn on the background scan + daily digest email jobs (see
+    # app/step4_agent/scheduler.py's start_scheduler()).
     agent_scheduler_enabled: bool = False
-    agent_scan_interval_minutes: int = 60
+    agent_scan_interval_minutes: int = 480  # 8 hours
     agent_max_sources_per_scan: int = 3
+
+    # How long job postings/matches are kept before auto-expiring (MongoDB
+    # TTL index, see app/core/db.py) — bounds collection growth from the
+    # recurring scheduler.
+    job_retention_days: int = 14
+
+    # Hour (0-23, server/UTC time) the once-daily match digest email sends.
+    email_digest_hour: int = 9
+
+    # Public base URL of this app — used to build the "view all matches"
+    # link in digest emails. Override in .env once deployed.
+    app_base_url: str = "http://localhost:8000"
 
     # Logging — see app/core/logger.py. One of DEBUG/INFO/WARNING/ERROR/CRITICAL.
     log_level: str = "INFO"

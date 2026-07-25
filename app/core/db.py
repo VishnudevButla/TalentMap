@@ -47,6 +47,22 @@ job_matches_collection   = db["job_matches"]
 agent_state_collection   = db["agent_state"]
 activity_log_collection  = db["activity_log"]
 user_settings_collection = db["user_settings"]
+scheduler_locks_collection = db["scheduler_locks"]
+
+# AI Job Agent indexes — TTL bounds collection growth from the recurring
+# scheduler, the unique index makes match writes race-safe (see matcher.py).
+# Index creation failures shouldn't take the whole API down, so they're
+# logged and swallowed rather than re-raised like the connection above.
+try:
+    _retention_seconds = settings.job_retention_days * 86400
+    job_postings_collection.create_index("fetched_at", expireAfterSeconds=_retention_seconds)
+    job_matches_collection.create_index("created_at", expireAfterSeconds=_retention_seconds)
+    job_matches_collection.create_index(
+        [("user_id", 1), ("job_id", 1), ("resume_id", 1)], unique=True
+    )
+    logger.info("AI Job Agent indexes ensured (retention=%dd)", settings.job_retention_days)
+except Exception:
+    logger.warning("Failed to ensure AI Job Agent indexes", exc_info=True)
 
 
 def to_object_id(value: str):

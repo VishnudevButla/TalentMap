@@ -22,14 +22,20 @@ from app.core.db import job_postings_collection
 logger = logging.getLogger(__name__)
 
 
+MAX_DIGEST_MATCHES = 3
+
+
 def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool:
     """
-    Sends a match alert email with the top job matches.
-    
+    Sends the once-daily match digest email: the top MAX_DIGEST_MATCHES
+    matches (caller is expected to pass matches already sorted by score,
+    highest first), plus a CTA button linking back to the dashboard for
+    the full list.
+
     Args:
         to_email: Target candidate email address.
-        matches: List of match dictionaries from matcher.py.
-        
+        matches: List of match dictionaries from matcher.py, best-first.
+
     Returns:
         bool: True if sent successfully, False otherwise.
     """
@@ -41,8 +47,10 @@ def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool
         logger.debug("No matches to send — skipping alert")
         return False
 
+    matches = matches[:MAX_DIGEST_MATCHES]
+
     # Never log `to_email` for privacy
-    logger.info("Preparing email alert containing %d matches", len(matches))
+    logger.info("Preparing email digest containing %d matches", len(matches))
 
     # Fetch job details from the database
     job_ids = []
@@ -83,7 +91,7 @@ def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool
             text_color = "#ffffff"
         else:
             pill_color = "#c62828"  # Red
-            text_color = "#ffffff"
+            text_color = "#ffff ff"
 
         salary_text = ""
         s_min = job.get("salary_min")
@@ -143,7 +151,13 @@ def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool
                 </p>
                 
                 {"".join(items_html)}
-                
+
+                <div style="text-align: center; margin: 24px 0 8px 0;">
+                    <a href="{settings.app_base_url}/dashboard" target="_blank" style="display: inline-block; background-color: #1557b0; color: #ffffff; padding: 12px 28px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">
+                        View your top 10 matches &rarr;
+                    </a>
+                </div>
+
                 <p style="margin: 24px 0 0 0; font-size: 12px; color: #70757a; text-align: center; line-height: 1.5;">
                     You are receiving this email because you registered for automated matches on TalentMap.<br>
                     To configure your settings or disable these alerts, log in to your dashboard.

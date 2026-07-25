@@ -15,7 +15,6 @@
         <h1 id="candidateName">{{ candidate.name }}</h1>
         <div class="identity-meta">
           <span class="chip mono">{{ file() }}{{ candidate.resume_filename }}</span>
-          <span class="badge">Target: {{ target.role }} · {{ target.company }}</span>
           <span class="chip">Analyzed {{ candidate.analyzed_date }}</span>
           {% if is_sample %}<span class="badge sample">Sample data</span>{% endif %}
         </div>
@@ -33,26 +32,6 @@
         </div>
         <div class="ring-note"><p>{{ match.note | safe }}</p></div>
       </div>
-    </div>
-
-    <div class="card">
-      <span class="stat-label">Predicted role</span>
-      <div class="role-primary">{{ predicted_role.title }}</div>
-      <div class="meter"><span data-target="{{ predicted_role.confidence }}%"></span></div>
-      <div class="role-conf">{{ predicted_role.confidence }}% confidence</div>
-      <div class="role-alt">
-        {% for alt in predicted_role.alternates %}<span>{{ alt }}</span>{% endfor %}
-      </div>
-    </div>
-
-    <div class="card">
-      <span class="stat-label">Predicted salary</span>
-      <div class="salary-figure">${{ salary.median }}K<sup>median</sup></div>
-      <div class="band">
-        <div class="band-range" data-left="{{ salary.market_left_pct }}%" data-target="{{ salary.market_width_pct }}%" style="left:0;width:0"></div>
-        <div class="band-marker" data-left="{{ salary.marker_pct }}%"></div>
-      </div>
-      <div class="band-labels"><span>${{ salary.axis_min }}K</span><span>${{ salary.market_min }}K–${{ salary.market_max }}K market range</span><span>${{ salary.axis_max }}K</span></div>
     </div>
 
     <div class="card">
@@ -94,15 +73,15 @@
       <div class="card">
         <div class="card-head">
           <h2>AI Job Agent</h2>
-          <span class="stat-status {{ 'good' if agent.is_active else 'warn' }}">{{ 'Active' if agent.is_active else 'Paused' }}</span>
+          <span class="stat-status {{ 'good' if agent.is_active else 'warn' }}" id="agentStatusBadge">{{ 'Active' if agent.is_active else 'Paused' }}</span>
         </div>
         <p class="card-sub" style="margin:0 0 .3rem">Next scan in</p>
         <div class="agent-countdown" id="agentCountdown" data-seconds="{{ agent.next_scan_in_seconds }}">00:00:00</div>
         <div class="agent-stats">
-          <div><span class="agent-stat-value">{{ agent.jobs_scanned_today }}</span><span class="agent-stat-label">Jobs Scanned</span></div>
-          <div><span class="agent-stat-value">{{ agent.new_matches_today }}</span><span class="agent-stat-label">New Matches</span></div>
-          <div><span class="agent-stat-value">{{ agent.emails_sent_today }}</span><span class="agent-stat-label">Emails Sent</span></div>
-          <div><span class="agent-stat-value">{{ agent.sources_monitored }}</span><span class="agent-stat-label">Sources</span></div>
+          <div><span class="agent-stat-value" id="agentJobsScanned">{{ agent.jobs_scanned_today }}</span><span class="agent-stat-label">Jobs Scanned</span></div>
+          <div><span class="agent-stat-value" id="agentNewMatches">{{ agent.new_matches_today }}</span><span class="agent-stat-label">New Matches</span></div>
+          <div><span class="agent-stat-value" id="agentEmailsSent">{{ agent.emails_sent_today }}</span><span class="agent-stat-label">Emails Sent</span></div>
+          <div><span class="agent-stat-value" id="agentSources">{{ agent.sources_monitored }}</span><span class="agent-stat-label">Sources</span></div>
         </div>
         <a class="see-all" href="/agent" style="display:inline-block;margin-top:1rem">View agent settings →</a>
       </div>

@@ -67,17 +67,23 @@ def run_matching_for_user(user_id: str) -> List[Dict[str, Any]]:
     logger.info("Matcher started: user_id=%s postings=%d", user_id, len(postings))
     new_matches = []
 
+    resume_id = latest_analysis.get("resume_id")
+
     for job_doc in postings:
         job_id = str(job_doc["_id"])
-        existing = job_matches_collection.find_one({"user_id": user_id, "job_id": job_id})
+        # Keyed on resume_id too, so a new resume version is rescored
+        # against every posting instead of being silently skipped.
+        existing = job_matches_collection.find_one(
+            {"user_id": user_id, "job_id": job_id, "resume_id": resume_id}
+        )
         if existing:
-            continue  # already scored this posting for this user
+            continue  # already scored this posting for this resume version
 
         result = score_job_for_resume(resume_components, job_doc)
         match_doc = {
             "user_id": user_id,
             "job_id": job_id,
-            "resume_id": latest_analysis.get("resume_id"),
+            "resume_id": resume_id,
             "match_score": result["score"],
             "status": result["status"],
             "component_scores": result["component_scores"],
@@ -86,7 +92,14 @@ def run_matching_for_user(user_id: str) -> List[Dict[str, Any]]:
             "seen": False,
             "created_at": datetime.utcnow(),
         }
-        job_matches_collection.insert_one(match_doc)
+        # Upsert on the same (user_id, job_id, resume_id) key as the unique
+        # index in db.py — makes a concurrent scan-now/scheduled overlap
+        # structurally unable to double-insert, rather than just unlikely.
+        job_matches_collection.update_one(
+            {"user_id": user_id, "job_id": job_id, "resume_id": resume_id},
+            {"$setOnInsert": match_doc},
+            upsert=True,
+        )
         new_matches.append(match_doc)
 
         if result["score"] >= 70:

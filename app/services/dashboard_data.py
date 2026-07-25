@@ -5,28 +5,13 @@ app/services/dashboard_data.py — Dashboard context builder.
 shaped like a real dashboard payload, for the server-rendered pre-hydration
 state (see templates/dashboard.html). Real values are fetched client-side
 from GET /api/dashboard/summary (app/routers/dashboard_api.py) and swap
-these in — see static/js/dashboard.js's hydrateFromSummary(). Note:
-predicted_role/salary below are just illustrative sample numbers, not ML
-output — the real equivalents are derived from actual job matches by
-app/services/market_insights.py.
+these in — see static/js/dashboard.js's hydrateFromSummary().
 """
 
 from typing import Any, Dict
 
 
-def _salary_scale(axis_min: int, axis_max: int, market_min: int, market_max: int, median: int) -> Dict[str, float]:
-    span = axis_max - axis_min
-    return {
-        "market_left_pct": round((market_min - axis_min) / span * 100, 1),
-        "market_width_pct": round((market_max - market_min) / span * 100, 1),
-        "marker_pct": round((median - axis_min) / span * 100, 1),
-    }
-
-
 def get_sample_dashboard_context(user_id: str) -> Dict[str, Any]:
-    axis_min, axis_max = 80, 200
-    market_min, market_max, median = 118, 165, 134
-
     return {
         "is_sample": True,
         "candidate": {
@@ -35,26 +20,12 @@ def get_sample_dashboard_context(user_id: str) -> Dict[str, Any]:
             "resume_filename": "Aditi_Rao_Resume.pdf",
             "analyzed_date": "Jul 19, 2026",
         },
-        "target": {"role": "SDE-1", "company": "Amazon"},
         "match": {
             "score": 78,
             "status": "good",
             "status_label": "Strong match",
             "note": "Resume aligns closely with the <strong>SDE-1, Amazon</strong> posting "
                     "— ahead of 5 of 9 required skill areas.",
-        },
-        "predicted_role": {
-            "title": "Backend Software Engineer",
-            "confidence": 91,
-            "alternates": ["Full-Stack Engineer", "Platform Engineer"],
-        },
-        "salary": {
-            "median": median,
-            "axis_min": axis_min,
-            "axis_max": axis_max,
-            "market_min": market_min,
-            "market_max": market_max,
-            **_salary_scale(axis_min, axis_max, market_min, market_max, median),
         },
         "matched_skills": [
             "Python", "REST APIs", "SQL", "AWS", "Docker", "Git",

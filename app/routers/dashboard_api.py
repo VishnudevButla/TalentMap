@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends
 from app.core.db import analysis_collection, job_matches_collection, job_postings_collection, activity_log_collection, to_object_id
 from app.core.security import get_current_user
 from app.step4_agent import state as agent_state
-from app.services.market_insights import get_predicted_role_and_salary
+from app.services.market_insights import get_current_match_summary
 
 router = APIRouter()
 
@@ -63,11 +63,11 @@ async def dashboard_summary(user_id: str = Depends(get_current_user)):
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     ai_jobs_found_today = job_postings_collection.count_documents({"fetched_at": {"$gte": today_start}})
 
-    insights = get_predicted_role_and_salary(user_id)
+    match = get_current_match_summary(user_id)
 
     return {
         "analysis": analysis,
-        "insights": insights,  # {"predicted_role": ..., "salary": ...} or None — see market_insights.py
+        "match": match,  # {"score": ..., "status": ..., ...} or None — see market_insights.py
         "job_matches": job_matches,
         "agent": {
             "is_active": agent_doc.get("is_active", False),
