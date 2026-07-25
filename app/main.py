@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api
+from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api, market_trends_api
 from app.step1_api import upload_resume_1, resume_analyze_2, routes_history
 from app.step4_agent import routes_agent
 from app.step4_agent.scheduler import start_scheduler
@@ -57,6 +57,7 @@ app.include_router(routes_history.router, prefix="/api")
 app.include_router(activity_api.router, prefix="/api")
 app.include_router(settings_api.router, prefix="/api")
 app.include_router(dashboard_api.router, prefix="/api")
+app.include_router(market_trends_api.router, prefix="/api")
 app.include_router(routes_agent.router, prefix="/api")
 
 from fastapi.responses import RedirectResponse

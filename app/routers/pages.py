@@ -10,16 +10,20 @@ navigation.
 from fastapi import APIRouter, Request
 
 from app.core.templates import templates
-from app.services.dashboard_data import get_sample_dashboard_context
 
 router = APIRouter()
 
 
 @router.get("/dashboard")
 async def dashboard_page(request: Request):
-    context = get_sample_dashboard_context(user_id="demo")
-    context.update({"request": request, "active_nav": "dashboard"})
-    return templates.TemplateResponse("dashboard.html", context)
+    # Fully client-hydrated (see static/js/dashboard.js) — same reason as
+    # history.html/activity.html/market_trends.html: the JWT lives in
+    # localStorage, not a cookie, so real per-user data can't be computed
+    # at this point. No server-side sample context — every section renders
+    # an honest loading/empty state until GET /api/dashboard/summary lands.
+    return templates.TemplateResponse(
+        "dashboard.html", {"request": request, "active_nav": "dashboard"}
+    )
 
 
 @router.get("/new-analysis")
@@ -45,10 +49,12 @@ async def activity_page(request: Request):
 
 @router.get("/market-trends")
 async def market_trends_page(request: Request):
-    from app.services.market_trends_data import get_market_trends_context
-    context = get_market_trends_context(user_id="demo")
-    context.update({"request": request, "active_nav": "market-trends"})
-    return templates.TemplateResponse("market_trends.html", context)
+    # Fully client-hydrated (see static/js/market-trends.js) — same reason
+    # as history.html/activity.html: the JWT lives in localStorage, not a
+    # cookie, so real per-user data can't be computed at this point.
+    return templates.TemplateResponse(
+        "market_trends.html", {"request": request, "active_nav": "market-trends"}
+    )
 
 
 @router.get("/settings")
@@ -69,4 +75,14 @@ async def settings_page(request: Request):
 async def agent_page(request: Request):
     return templates.TemplateResponse(
         "agent.html", {"request": request, "active_nav": "agent"}
+    )
+
+
+@router.get("/matches")
+async def matches_page(request: Request):
+    # Fully client-hydrated (see static/js/matches.js), fetching every real
+    # match from GET /api/jobs/matches — the dashboard only ever shows the
+    # top few; this page is the full, unabridged, filterable list.
+    return templates.TemplateResponse(
+        "matches.html", {"request": request, "active_nav": "matches"}
     )

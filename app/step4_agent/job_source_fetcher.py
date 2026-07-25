@@ -46,6 +46,11 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
+# The real, currently-wired sources — run_job_fetch_cycle() calls both of
+# these unconditionally every cycle. Single source of truth for anywhere
+# that needs to display "sources monitored" (state.py, routes_agent.py).
+SOURCES = ["adzuna", "remoteok"]
+
 # RemoteOK blocks the default python-requests User-Agent with a 403.
 _REMOTEOK_HEADERS = {
     "User-Agent": (

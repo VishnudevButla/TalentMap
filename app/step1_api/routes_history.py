@@ -61,6 +61,12 @@ async def get_history(user_id: str = Depends(get_current_user), skip: int = 0, l
             "uploaded_at": uploaded_at,
             "matched_skills": analysis.get("matched_skills", []) if analysis else [],
             "missing_skills": get_missing_skills_for_resume(resume_id) if analysis else [],
+            # Full NER breakdown — skills/education/experience/projects/
+            # certifications — the same structured entities embeddings_4.py
+            # turns into vectors for matching. Shown as-is on the History
+            # page so a user can see exactly what was parsed from a given
+            # resume version.
+            "entities": analysis.get("entities") if analysis else None,
             "match": get_match_summary_for_resume(resume_id),
         })
 

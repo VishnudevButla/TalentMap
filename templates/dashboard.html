@@ -1,5 +1,5 @@
 {% extends "layouts/base_app.html" %}
-{% from "partials/icons.html" import check, plus, external_link, file, mail, briefcase %}
+{% from "partials/icons.html" import file %}
 
 {% block title %}Dashboard — TalentMap{% endblock %}
 
@@ -10,13 +10,12 @@
 {% block content %}
   <div class="topbar">
     <div class="identity">
-      <div class="avatar" id="candidateInitials">{{ candidate.initials }}</div>
+      <div class="avatar" id="candidateInitials">?</div>
       <div>
-        <h1 id="candidateName">{{ candidate.name }}</h1>
+        <h1 id="candidateName">Loading…</h1>
         <div class="identity-meta">
-          <span class="chip mono">{{ file() }}{{ candidate.resume_filename }}</span>
-          <span class="chip">Analyzed {{ candidate.analyzed_date }}</span>
-          {% if is_sample %}<span class="badge sample">Sample data</span>{% endif %}
+          <span class="chip mono">{{ file() }}No resume analyzed yet</span>
+          <span class="chip">Not analyzed yet</span>
         </div>
       </div>
     </div>
@@ -25,20 +24,20 @@
 
   <div class="stat-row">
     <div class="card">
-      <div class="card-head"><span class="stat-label">Match score</span><span class="stat-status {{ match.status }}">{{ match.status_label }}</span></div>
+      <div class="card-head"><span class="stat-label">Match score</span><span class="stat-status" id="matchStatus"></span></div>
       <div class="ring-wrap">
-        <div class="ring" data-pct="{{ match.score }}" style="--ring-color:var(--{{ match.status }})">
+        <div class="ring" data-pct="0" style="--ring-color:var(--warn)">
           <span class="ring-value">0%</span>
         </div>
-        <div class="ring-note"><p>{{ match.note | safe }}</p></div>
+        <div class="ring-note"><p>Loading your match data…</p></div>
       </div>
     </div>
 
     <div class="card">
       <span class="stat-label">AI jobs found today</span>
-      <div class="stat-figure" id="aiJobsFoundToday">{{ ai_jobs_found_today }}</div>
+      <div class="stat-figure" id="aiJobsFoundToday">—</div>
       <p class="stat-caption">High match opportunities</p>
-      <p class="stat-caption stat-caption-good">{{ ai_jobs_found_delta }}</p>
+      <p class="stat-caption stat-caption-good" id="aiJobsFoundDelta"></p>
     </div>
   </div>
 
@@ -46,7 +45,7 @@
     <div class="card">
       <div class="card-head">
         <h2>Top job matches for you</h2>
-        <a class="see-all" href="/agent">View all matches →</a>
+        <a class="see-all" href="/matches">View all matches →</a>
       </div>
       <div class="filter-pills" id="jobFilterPills">
         <span class="pill is-active" data-filter="all">All</span>
@@ -55,17 +54,7 @@
         <span class="pill" data-filter="remote">Remote</span>
       </div>
       <div class="job-list" id="jobList">
-        {% for job in job_matches %}
-        <div class="job-row" data-status="{{ job.status }}" data-remote="{{ job.remote_type }}">
-          <div class="job-logo">{{ job.company[0] }}</div>
-          <div class="job-main">
-            <a href="{{ job.url }}">{{ job.title }} {{ external_link() }}</a>
-            <p>{{ job.company }} · {{ job.location }} · {{ job.work_type }}</p>
-          </div>
-          <span class="stat-status {{ job.status }}">{{ job.match_score }}% Match</span>
-          <a href="{{ job.url }}" class="btn-primary btn-sm" style="text-decoration:none">Apply</a>
-        </div>
-        {% endfor %}
+        <p class="card-sub">Loading matches…</p>
       </div>
     </div>
 
@@ -73,33 +62,23 @@
       <div class="card">
         <div class="card-head">
           <h2>AI Job Agent</h2>
-          <span class="stat-status {{ 'good' if agent.is_active else 'warn' }}" id="agentStatusBadge">{{ 'Active' if agent.is_active else 'Paused' }}</span>
+          <span class="stat-status good">Global scan</span>
         </div>
         <p class="card-sub" style="margin:0 0 .3rem">Next scan in</p>
-        <div class="agent-countdown" id="agentCountdown" data-seconds="{{ agent.next_scan_in_seconds }}">00:00:00</div>
+        <div class="agent-countdown" id="agentCountdown" data-seconds="0">00:00:00</div>
         <div class="agent-stats">
-          <div><span class="agent-stat-value" id="agentJobsScanned">{{ agent.jobs_scanned_today }}</span><span class="agent-stat-label">Jobs Scanned</span></div>
-          <div><span class="agent-stat-value" id="agentNewMatches">{{ agent.new_matches_today }}</span><span class="agent-stat-label">New Matches</span></div>
-          <div><span class="agent-stat-value" id="agentEmailsSent">{{ agent.emails_sent_today }}</span><span class="agent-stat-label">Emails Sent</span></div>
-          <div><span class="agent-stat-value" id="agentSources">{{ agent.sources_monitored }}</span><span class="agent-stat-label">Sources</span></div>
+          <div><span class="agent-stat-value" id="agentJobsScanned">—</span><span class="agent-stat-label">Jobs in Pool</span></div>
+          <div><span class="agent-stat-value" id="agentNewMatches">—</span><span class="agent-stat-label">New Matches</span></div>
+          <div><span class="agent-stat-value" id="agentEmailsSent">—</span><span class="agent-stat-label">Emails Sent</span></div>
+          <div><span class="agent-stat-value" id="agentSources">—</span><span class="agent-stat-label">Sources</span></div>
         </div>
-        <a class="see-all" href="/agent" style="display:inline-block;margin-top:1rem">View agent settings →</a>
+        <a class="see-all" href="/agent" style="display:inline-block;margin-top:1rem">View agent details →</a>
       </div>
 
       <div class="card">
         <div class="card-head"><h2>Recent activity</h2><a class="see-all" href="/activity">View all</a></div>
         <div class="activity-feed">
-          {% for item in activity %}
-          <div class="activity-row">
-            <div class="activity-icon">
-              {% if item.icon == 'mail' %}{{ mail() }}{% elif item.icon == 'briefcase' %}{{ briefcase() }}{% else %}{{ file() }}{% endif %}
-            </div>
-            <div class="activity-body">
-              <div class="activity-message">{{ item.message }}</div>
-              <div class="activity-time">{{ item.time }}</div>
-            </div>
-          </div>
-          {% endfor %}
+          <p class="card-sub">Loading…</p>
         </div>
       </div>
     </div>
@@ -110,34 +89,25 @@
       <div class="card-head"><h2>Skill match breakdown</h2><a class="see-all" href="#">Export report</a></div>
 
       <div class="skill-section">
-        <div class="skill-section-head"><span class="dot good"></span><h3>Matched skills</h3><span class="count">{{ matched_skills | length }} found</span></div>
-        <div class="chips">
-          {% for skill in matched_skills %}
-          <span class="skill-chip have">{{ check() }}{{ skill }}</span>
-          {% endfor %}
+        <div class="skill-section-head"><span class="dot good"></span><h3>Matched skills</h3><span class="count" id="matchedSkillsCount">—</span></div>
+        <div class="chips" id="matchedSkillsChips">
+          <p class="card-sub">Loading…</p>
         </div>
       </div>
 
       <div class="skill-section">
-        <div class="skill-section-head"><span class="dot crit"></span><h3>Missing — recommended to learn</h3><span class="count">{{ missing_skills | length }} gaps</span></div>
-        <div class="chips">
-          {% for gap in missing_skills %}
-          <span class="skill-chip gap">{{ plus() }}<b>{{ gap.name }}</b><span class="demand-tag">{{ gap.demand }} demand</span></span>
-          {% endfor %}
+        <div class="skill-section-head"><span class="dot crit"></span><h3>Missing — recommended to learn</h3><span class="count" id="missingSkillsCount">—</span></div>
+        <div class="chips" id="missingSkillsChips">
+          <p class="card-sub">Loading…</p>
         </div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
-      {% for skill in demand_skills %}
-      <div class="demand-row">
-        <span class="demand-name">{{ skill.name }}</span>
-        <div class="demand-track"><div class="demand-fill" data-target="{{ skill.score }}%"></div></div>
-        <span class="demand-val">{{ skill.score }}</span>
-        <span class="coverage {{ 'have' if skill.have else 'gap' }}">{{ 'Have it' if skill.have else 'Gap' }}</span>
+      <div id="demandSkillsList">
+        <p class="card-sub">Loading…</p>
       </div>
-      {% endfor %}
     </div>
   </div>
 {% endblock %}

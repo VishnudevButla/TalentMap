@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # turn on the background scan + daily digest email jobs (see
     # app/step4_agent/scheduler.py's start_scheduler()).
     agent_scheduler_enabled: bool = False
-    agent_scan_interval_minutes: int = 480  # 8 hours
+    agent_scan_interval_minutes: int = 360  # 6 hours — global, shared by every user
     agent_max_sources_per_scan: int = 3
 
     # How long job postings/matches are kept before auto-expiring (MongoDB

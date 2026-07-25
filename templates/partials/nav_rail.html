@@ -26,6 +26,12 @@
       </a>
     </li>
     <li>
+      <a href="/matches" {% if active_nav == 'matches' %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        Your Matches
+      </a>
+    </li>
+    <li>
       <a href="/history" {% if active_nav == 'history' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         Resume History

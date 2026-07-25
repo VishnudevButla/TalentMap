@@ -1,67 +1,52 @@
 """
 app/step4_agent/routes_agent.py — AI Job Agent API
 
-Handles: GET /api/agent/status, POST /api/agent/settings,
-POST /api/agent/scan-now, GET /api/jobs/matches
+Handles: GET /api/agent/status, GET /api/jobs/matches
 
-All real — no external credentials needed to exercise these. scan-now
-manually triggers the same run_scan_cycle() a real scheduler (TODO in
-scheduler.py) would call automatically.
+Real, no external credentials needed to exercise these. The scan itself is
+fully global — one shared 6-hour cycle for every registered user, no
+per-user settings and no manual trigger endpoint (removed on purpose: the
+countdown reaching zero is the only thing that starts a scan).
 """
 
 from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 from app.core.db import job_matches_collection, job_postings_collection, to_object_id
 from app.core.security import get_current_user
 from app.step4_agent import state as agent_state
-from app.step4_agent.scheduler import run_scan_cycle
+from app.step4_agent.job_source_fetcher import SOURCES
 
 router = APIRouter()
 
 
 @router.get("/agent/status")
 async def get_agent_status(user_id: str = Depends(get_current_user)):
-    doc = agent_state.ensure_agent_state(user_id)
-    next_scan_at = doc.get("next_scan_at")
-    next_scan_in_seconds = 0
-    if next_scan_at:
-        if isinstance(next_scan_at, str):
-            next_scan_at = datetime.fromisoformat(next_scan_at)
-        next_scan_in_seconds = max(0, int((next_scan_at - datetime.utcnow()).total_seconds()))
+    global_state = agent_state.get_global_agent_state()
+    user_state = agent_state.ensure_agent_state(user_id)
+
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_count = job_matches_collection.count_documents({
+        "user_id": user_id,
+        "created_at": {"$gte": today_start},
+    })
 
     return {
-        "is_active": doc.get("is_active", False),
-        "status": doc.get("status", "paused"),
-        "sources_monitored": doc.get("sources_monitored", []),
-        "jobs_scanned_today": doc.get("jobs_scanned_today", 0),
-        "new_matches_today": doc.get("new_matches_today", 0),
-        "emails_sent_today": doc.get("emails_sent_today", 0),
-        "next_scan_in_seconds": next_scan_in_seconds,
-        "last_error": doc.get("last_error"),
+        # Global — identical for every user, driven by the shared scheduler.
+        "next_scan_in_seconds": global_state["next_scan_in_seconds"],
+        "last_scan_at": global_state["last_scan_at"],
+        "last_fetch_fetched": global_state["last_fetch_fetched"],
+        "last_fetch_saved": global_state["last_fetch_saved"],
+        "sources": SOURCES,
+        "jobs_in_pool": job_postings_collection.count_documents({}),
+        # Personal — this user's own real counts.
+        "new_matches_today": today_start_count,
+        "emails_sent_today": user_state.get("emails_sent_today", 0),
+        "total_matches": job_matches_collection.count_documents({"user_id": user_id}),
+        "last_error": user_state.get("last_error"),
     }
-
-
-class AgentSettingsUpdate(BaseModel):
-    is_active: Optional[bool] = None
-    scan_interval_minutes: Optional[int] = None
-
-
-@router.post("/agent/settings")
-async def update_agent_settings(
-    body: AgentSettingsUpdate, user_id: str = Depends(get_current_user)
-):
-    return agent_state.update_agent_settings(
-        user_id, is_active=body.is_active, scan_interval_minutes=body.scan_interval_minutes
-    )
-
-
-@router.post("/agent/scan-now")
-async def scan_now(user_id: str = Depends(get_current_user)):
-    return await run_scan_cycle(user_id)
 
 
 @router.get("/jobs/matches")
@@ -95,6 +80,12 @@ async def get_job_matches(
             "status": match["status"],
             "applied": match.get("applied", False),
             "posted_at": job.get("posted_at"),
+            "source": job.get("source"),
+            "description": job.get("description"),
+            "skills_detected": job.get("skills_detected", []),
+            "salary_min": job.get("salary_min"),
+            "salary_max": job.get("salary_max"),
+            "component_scores": match.get("component_scores", {}),
         })
 
     return {"count": len(results), "results": results}

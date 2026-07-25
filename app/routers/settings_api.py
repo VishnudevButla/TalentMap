@@ -4,8 +4,9 @@ app/routers/settings_api.py — Settings CRUD API.
 Handles: GET/PATCH /api/settings
 
 Real DB reads/writes against user_settings_collection, no external
-credentials involved. Agent-specific settings (scan interval, sources,
-keywords) live under /api/agent/settings in app/step4_agent/routes_agent.py.
+credentials involved. The AI Job Agent has no per-user settings anymore —
+it's a fully global scan, see app/step4_agent/routes_agent.py's
+GET /api/agent/status.
 """
 
 from fastapi import APIRouter, Depends

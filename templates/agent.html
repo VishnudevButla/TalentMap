@@ -3,6 +3,7 @@
 {% block title %}AI Job Agent — TalentMap{% endblock %}
 
 {% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/agent.css') }}" />
 {% endblock %}
 
@@ -10,56 +11,48 @@
   <div class="topbar">
     <div>
       <h1>AI Job Agent</h1>
-      <p class="card-sub">Scans job sources on a schedule and matches them against your latest resume analysis.</p>
+      <p class="card-sub">Scans job sources on a fixed global schedule and matches them against every user's latest resume analysis.</p>
     </div>
-    <div class="agent-controls">
-      <span class="stat-status" id="agentStatusBadge">—</span>
-      <label class="switch">
-        <input type="checkbox" id="agentActiveToggle" />
-        <span class="switch-track"></span>
-      </label>
-    </div>
+    <span class="stat-status good">Always on</span>
   </div>
 
   <div class="agent-grid">
     <div class="card">
       <div class="card-head"><h2>Next scan</h2></div>
       <div class="agent-countdown" id="agentCountdown" data-seconds="0">00:00:00</div>
-      <p class="card-sub">Counts down to the next automatic scan, based on your scan interval below.</p>
-      <button class="btn-primary btn-sm" id="scanNowBtn" style="margin-top:1rem">Scan now</button>
-      <p class="settings-note" id="scanNowNote"></p>
+      <p class="card-sub">Counts down to the next global scan, shared by every user — there's no manual trigger, the countdown reaching zero is what starts it.</p>
     </div>
 
     <div class="card">
-      <div class="card-head"><h2>Today</h2></div>
+      <div class="card-head"><h2>Last scan</h2></div>
+      <p class="card-sub" id="lastScanWhen" style="margin:0 0 .8rem">Loading…</p>
       <div class="agent-stats">
-        <div><span class="agent-stat-value" id="statJobsScanned">0</span><span class="agent-stat-label">Jobs Scanned</span></div>
-        <div><span class="agent-stat-value" id="statNewMatches">0</span><span class="agent-stat-label">New Matches</span></div>
-        <div><span class="agent-stat-value" id="statEmailsSent">0</span><span class="agent-stat-label">Emails Sent</span></div>
-        <div><span class="agent-stat-value" id="statSources">0</span><span class="agent-stat-label">Sources Monitored</span></div>
+        <div><span class="agent-stat-value" id="lastScanFetched">—</span><span class="agent-stat-label">Jobs Fetched</span></div>
+        <div><span class="agent-stat-value" id="lastScanSaved">—</span><span class="agent-stat-label">New Postings Saved</span></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-head"><h2>Scan interval</h2></div>
-      <div class="settings-row">
-        <p class="card-sub" style="margin:0">How often the agent scans for new postings.</p>
-        <select id="scanIntervalSelect" class="agent-select">
-          <option value="30">Every 30 min</option>
-          <option value="60">Every hour</option>
-          <option value="240">Every 4 hours</option>
-          <option value="1440">Once a day</option>
-        </select>
+      <div class="card-head"><h2>Your stats</h2></div>
+      <div class="agent-stats">
+        <div><span class="agent-stat-value" id="statNewMatches">0</span><span class="agent-stat-label">New Matches Today</span></div>
+        <div><span class="agent-stat-value" id="statTotalMatches">0</span><span class="agent-stat-label">Total Matches</span></div>
+        <div><span class="agent-stat-value" id="statEmailsSent">0</span><span class="agent-stat-label">Emails Sent Today</span></div>
+        <div><span class="agent-stat-value" id="statJobsInPool">0</span><span class="agent-stat-label">Jobs In Pool</span></div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-head"><h2>Sources</h2></div>
-      <p class="settings-note">
-        TODO(you): only a placeholder "default" source exists until a real job-board
-        API is wired in app/step4_agent/job_source_fetcher.py — see /settings for
-        connection status.
-      </p>
+      <div class="agent-stats">
+        <div><span class="agent-stat-value" id="statSources">0</span><span class="agent-stat-label">Sources Monitored</span></div>
+      </div>
+      <p class="settings-note" id="sourcesList">Loading…</p>
+    </div>
+
+    <div class="card" style="grid-column: 1 / -1">
+      <div class="card-head"><h2>Recent scans</h2></div>
+      <div id="recentScans"><p class="card-sub">Loading…</p></div>
     </div>
   </div>
 {% endblock %}

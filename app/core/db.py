@@ -48,6 +48,9 @@ agent_state_collection   = db["agent_state"]
 activity_log_collection  = db["activity_log"]
 user_settings_collection = db["user_settings"]
 scheduler_locks_collection = db["scheduler_locks"]
+# Single durable doc (_id: "global") holding the shared scan schedule/stats —
+# no TTL, unlike scheduler_locks_collection which is a self-expiring lock.
+agent_global_state_collection = db["agent_global_state"]
 
 # AI Job Agent indexes — TTL bounds collection growth from the recurring
 # scheduler, the unique index makes match writes race-safe (see matcher.py).
@@ -60,6 +63,9 @@ try:
     job_matches_collection.create_index(
         [("user_id", 1), ("job_id", 1), ("resume_id", 1)], unique=True
     )
+    # Backs the live "new matches today" count (job_matches_collection.count_documents
+    # with a user_id + created_at range) instead of a stored/duplicated counter.
+    job_matches_collection.create_index([("user_id", 1), ("created_at", 1)])
     logger.info("AI Job Agent indexes ensured (retention=%dd)", settings.job_retention_days)
 except Exception:
     logger.warning("Failed to ensure AI Job Agent indexes", exc_info=True)

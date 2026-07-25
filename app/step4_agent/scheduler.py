@@ -18,10 +18,8 @@ import asyncio
 import logging
 import socket
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
-
-from bson import ObjectId
 
 from app.core.db import (
     job_postings_collection,
@@ -43,46 +41,42 @@ logger = logging.getLogger(__name__)
 async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
     """
     Matches one user's latest resume against the shared job pool. Does not
-    fetch — that's run_global_scan_cycle()'s job — so this is safe to call
-    as often as needed (e.g. manually via POST /api/agent/scan-now)
-    without burning any external API quota.
+    fetch — that's run_global_scan_cycle()'s job.
     """
     logger.info("Scheduler execution started: user_id=%s", user_id)
 
-    agent_state.ensure_agent_state(user_id, settings.agent_scan_interval_minutes)
+    agent_state.ensure_agent_state(user_id)
 
     try:
         new_matches = run_matching_for_user(user_id)
-        jobs_scanned = job_postings_collection.count_documents({})
+        jobs_in_pool = job_postings_collection.count_documents({})
 
-        updated_state = agent_state.advance_scan_clock(
-            user_id, jobs_scanned=jobs_scanned, new_matches=len(new_matches), emails_sent=0
-        )
+        updated_state = agent_state.advance_scan_clock(user_id, status="ok")
 
         log_activity(
             user_id=user_id,
             type="agent_scan",
-            message=f"Agent scan complete — {jobs_scanned} jobs in pool, {len(new_matches)} new matches",
+            message=f"Agent scan complete — {jobs_in_pool} jobs in pool, {len(new_matches)} new matches",
             icon="briefcase",
+            meta={"jobs_scanned": jobs_in_pool, "new_matches": len(new_matches)},
         )
 
         logger.info(
-            "Scheduler execution completed: user_id=%s jobs_scanned=%d new_matches=%d",
-            user_id, jobs_scanned, len(new_matches),
+            "Scheduler execution completed: user_id=%s jobs_in_pool=%d new_matches=%d",
+            user_id, jobs_in_pool, len(new_matches),
         )
-        return updated_state
+        return {**updated_state, "new_matches": len(new_matches)}
 
     except Exception as exc:  # keep the agent resilient — one bad scan shouldn't wedge the state
         logger.exception("Scheduler execution failed: user_id=%s", user_id)
-        return agent_state.advance_scan_clock(
-            user_id, jobs_scanned=0, new_matches=0, emails_sent=0,
-            status="error", last_error=str(exc),
-        )
+        updated_state = agent_state.advance_scan_clock(user_id, status="error", last_error=str(exc))
+        return {**updated_state, "new_matches": 0}
 
 
 async def run_global_scan_cycle() -> Dict[str, Any]:
     """
-    The interval job: one shared fetch, then one match pass per active user.
+    The interval job: one shared fetch, then one match pass per registered
+    user — every user, no per-user opt-in/opt-out.
     """
     logger.info("Global scan cycle started")
 
@@ -95,35 +89,33 @@ async def run_global_scan_cycle() -> Dict[str, Any]:
         logger.exception("Global fetch step failed — matching will proceed against the existing pool")
         fetch_summary = {"fetched": 0, "saved": 0}
 
-    active_user_ids = [doc["user_id"] for doc in agent_state_collection.find({"is_active": True})]
-    for user_id in active_user_ids:
-        await run_scan_cycle(user_id)
+    user_ids = [str(doc["_id"]) for doc in user_collection.find({}, {"_id": 1})]
+    total_new_matches = 0
+    for user_id in user_ids:
+        result = await run_scan_cycle(user_id)
+        total_new_matches += result.get("new_matches", 0)
+
+    agent_state.record_global_scan(fetch_summary, users_matched=len(user_ids), total_new_matches=total_new_matches)
 
     logger.info(
-        "Global scan cycle completed: fetched=%d saved=%d users_scanned=%d",
-        fetch_summary.get("fetched", 0), fetch_summary.get("saved", 0), len(active_user_ids),
+        "Global scan cycle completed: fetched=%d saved=%d users_scanned=%d total_new_matches=%d",
+        fetch_summary.get("fetched", 0), fetch_summary.get("saved", 0), len(user_ids), total_new_matches,
     )
-    return {"fetch": fetch_summary, "users_scanned": len(active_user_ids)}
+    return {"fetch": fetch_summary, "users_scanned": len(user_ids), "total_new_matches": total_new_matches}
 
 
 async def send_daily_digest() -> None:
     """
-    The cron job: once/day, emails each active user their top matches
+    The cron job: once/day, emails every registered user their top matches
     (score >= 70 only — a low match is not worth interrupting someone's day
-    for). Skips users with no qualifying matches entirely.
+    for). Skips users with no email on file or no qualifying matches — no
+    per-user opt-in/opt-out toggle, the digest is global like the scan.
     """
     logger.info("Daily digest job started")
     sent = 0
 
-    for state_doc in agent_state_collection.find({"is_active": True}):
-        user_id = state_doc["user_id"]
-
-        try:
-            user_doc = user_collection.find_one({"_id": ObjectId(user_id)}) or {}
-        except Exception:
-            logger.warning("Could not look up user for digest email: user_id=%s", user_id)
-            continue
-
+    for user_doc in user_collection.find({}):
+        user_id = str(user_doc["_id"])
         to_email = user_doc.get("email")
         if not to_email:
             continue
@@ -190,7 +182,7 @@ def start_scheduler(app) -> None:
     if not settings.agent_scheduler_enabled:
         logger.info(
             "AI Job Agent scheduler disabled (agent_scheduler_enabled=False) — "
-            "use POST /api/agent/scan-now to trigger a manual scan."
+            "no scans will run until it's turned on in .env."
         )
         return
 
@@ -200,11 +192,34 @@ def start_scheduler(app) -> None:
 
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-    scheduler = AsyncIOScheduler()
+    # APScheduler's job store is in-memory only — a process restart would
+    # normally recompute "next run = now + interval" from scratch, silently
+    # discarding however much of the previous countdown had already
+    # elapsed. Resume from the durable agent_global_state.next_scan_at
+    # instead, so a restart (dev --reload, a crash, a redeploy) picks the
+    # countdown back up rather than restarting the whole 6-hour window.
+    # Scheduler runs in explicit UTC to match the naive-UTC timestamps
+    # already stored everywhere else in this codebase (mixing naive/aware
+    # datetimes here previously caused a real misfire bug).
+    global_state = agent_state.get_global_agent_state()
+    stored_next_scan_at = global_state.get("next_scan_at")
+    first_run_kwargs = {}
+    if stored_next_scan_at:
+        first_run = stored_next_scan_at.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        if first_run < now:
+            # Overdue — the process was down past the scheduled time, so
+            # fire the catch-up scan right away instead of waiting out a
+            # fresh 6-hour window.
+            first_run = now
+        first_run_kwargs["next_run_time"] = first_run
+
+    scheduler = AsyncIOScheduler(timezone=timezone.utc)
     scheduler.add_job(
         run_global_scan_cycle, "interval",
         minutes=settings.agent_scan_interval_minutes,
         id="global_scan_cycle",
+        **first_run_kwargs,
     )
     scheduler.add_job(
         send_daily_digest, "cron",

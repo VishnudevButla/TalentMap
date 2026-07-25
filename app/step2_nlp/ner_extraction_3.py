@@ -104,10 +104,10 @@ def extract_entities(resume_text: str, job_description: str) -> dict:
         return _empty
 
     # Never log `prompt` — it embeds the full resume/JD text.
-    prompt = PROMPT_TEMPLATE.format(
-        job_description=job_description,
-        resume_text=resume_text,
-    )
+    # .replace(), not .format() — the template's JSON example block
+    # contains literal {braces} that .format() misreads as placeholders.
+    prompt = PROMPT_TEMPLATE.replace("{job_description}", job_description) \
+                             .replace("{resume_text}", resume_text)
 
     try:
         start = time.perf_counter()
