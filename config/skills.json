@@ -1,0 +1,43 @@
+{
+  "languages": [
+    "Python", "JavaScript", "TypeScript", "Java", "Go", "Golang", "Rust", "C++",
+    "C#", "Ruby", "PHP", "Swift", "Kotlin", "Scala", "R", "SQL", "Perl",
+    "Objective-C", "Dart", "Elixir", "Haskell", "MATLAB", "Shell", "Bash",
+    "HTML", "CSS"
+  ],
+  "frameworks": [
+    "React", "React Native", "Angular", "Vue", "Vue.js", "Django", "Flask",
+    "FastAPI", "Spring", "Spring Boot", "Express", "Express.js", "Next.js",
+    "Nuxt.js", "Node.js", ".NET", "ASP.NET", "Ruby on Rails", "Rails",
+    "Laravel", "Svelte", "jQuery", "Ember.js", "Redux", "GraphQL", "REST",
+    "gRPC", "Symfony"
+  ],
+  "cloud_platforms": [
+    "AWS", "Amazon Web Services", "Azure", "GCP", "Google Cloud",
+    "Google Cloud Platform", "Heroku", "DigitalOcean", "Vercel", "Netlify",
+    "Cloudflare", "IBM Cloud", "Oracle Cloud", "Alibaba Cloud"
+  ],
+  "databases": [
+    "MongoDB", "PostgreSQL", "Postgres", "MySQL", "Redis", "Elasticsearch",
+    "DynamoDB", "Cassandra", "SQLite", "Oracle Database", "MariaDB",
+    "Snowflake", "BigQuery", "Neo4j", "Firestore", "CockroachDB",
+    "Microsoft SQL Server", "SQL Server"
+  ],
+  "ai_ml_tools": [
+    "TensorFlow", "PyTorch", "scikit-learn", "Keras", "Hugging Face",
+    "LangChain", "OpenAI", "NLTK", "spaCy", "Pandas", "NumPy", "XGBoost",
+    "LightGBM", "OpenCV", "Machine Learning", "Deep Learning", "NLP",
+    "Computer Vision", "LLM", "Large Language Model", "Generative AI"
+  ],
+  "devops_tools": [
+    "Docker", "Kubernetes", "Terraform", "Jenkins", "GitHub Actions",
+    "GitLab CI", "CircleCI", "Ansible", "Prometheus", "Grafana", "Helm",
+    "ArgoCD", "Puppet", "Chef", "Nagios", "Datadog", "Splunk", "ELK Stack"
+  ],
+  "general": [
+    "Git", "Microservices", "Agile", "Scrum", "Kanban", "CI/CD",
+    "System Design", "API Design", "OOP", "TDD", "Linux", "Unix",
+    "Data Structures", "Algorithms", "Distributed Systems", "Excel",
+    "Salesforce", "Jira", "Figma", "Tableau", "Power BI"
+  ]
+}

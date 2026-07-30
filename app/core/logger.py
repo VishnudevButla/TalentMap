@@ -50,8 +50,11 @@ def setup_logging() -> None:
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
 
-    file_handler = logging.handlers.RotatingFileHandler(
-        LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8"
+    # Rotates at midnight; backupCount=1 keeps exactly one rotated-out file
+    # alongside the active one, so nothing older than ~1 day ever survives
+    # (backupCount=0 would disable deletion entirely, not what we want).
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        LOG_FILE, when="midnight", interval=1, backupCount=1, encoding="utf-8"
     )
     file_handler.setFormatter(formatter)
 

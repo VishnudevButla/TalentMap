@@ -1,15 +1,26 @@
 """
 app/step4_agent/scheduler.py — AI Job Agent scan cycle + scheduler.
 
+Started from worker.py (a dedicated process, not FastAPI) so the scan
+keeps running regardless of whether the API process is up — see
+worker.py's module docstring for why. Every function in this file is
+plain, framework-agnostic Python — no fastapi import anywhere — so it
+works identically whether it's called from worker.py or (as it used to
+be) from app/main.py's lifespan.
+
 Fetching (Adzuna/RemoteOK, via job_source_fetcher.run_job_fetch_cycle) is
 global and shared — it runs once per interval, not once per user, so N
-active users don't multiply API quota usage N times. Matching is still
+users don't multiply API quota usage N times. Matching is still
 per-user: run_scan_cycle(user_id) scores one user's latest resume against
-whatever is currently in job_postings_collection.
+postings first seen since that user's last scan (matcher.py's incremental
+`since` scoping), skipping users with no resume analysis on file
+(_get_active_user_ids). get_worker_health() below exposes the scheduler
+lock's renewal heartbeat so GET /api/agent/status and the dashboard can
+show real process-alive state instead of just a countdown.
 
 start_scheduler() wires three jobs onto an APScheduler AsyncIOScheduler:
-  - "global_scan_cycle" (interval): fetch once, then match every active user.
-  - "daily_digest" (cron): once/day, top matches emailed per active user.
+  - "global_scan_cycle" (interval): fetch once, then match every registered user.
+  - "daily_digest" (cron): once/day, top matches emailed to every registered user.
   - "scheduler_lock_renew" (interval): keeps this process's claim on the
     single-instance lock alive (see _try_acquire_scheduler_lock below).
 """
@@ -22,6 +33,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 
 from app.core.db import (
+    analysis_collection,
     job_postings_collection,
     job_matches_collection,
     user_collection,
@@ -41,14 +53,18 @@ logger = logging.getLogger(__name__)
 async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
     """
     Matches one user's latest resume against the shared job pool. Does not
-    fetch — that's run_global_scan_cycle()'s job.
+    fetch — that's run_global_scan_cycle()'s job. Scoped incrementally to
+    postings first seen since this user's last scan (see matcher.py's
+    `since` param) — a brand-new user (last_scan_at=None) still gets one
+    full pass.
     """
     logger.info("Scheduler execution started: user_id=%s", user_id)
 
-    agent_state.ensure_agent_state(user_id)
+    previous_state = agent_state.ensure_agent_state(user_id)
+    since = previous_state.get("last_scan_at")
 
     try:
-        new_matches = run_matching_for_user(user_id)
+        new_matches = run_matching_for_user(user_id, since=since)
         jobs_in_pool = job_postings_collection.count_documents({})
 
         updated_state = agent_state.advance_scan_clock(user_id, status="ok")
@@ -73,10 +89,23 @@ async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
         return {**updated_state, "new_matches": 0}
 
 
+def _get_active_user_ids() -> set:
+    """
+    "Active" = has at least one resume analysis on file. Not a new policy —
+    run_matching_for_user already no-ops immediately for a user with zero
+    analyses (nothing to embed or score against), so this just skips the
+    agent_state/activity_log writes and matcher call for accounts that
+    signed up and never uploaded a resume, rather than a real engagement
+    threshold.
+    """
+    return set(analysis_collection.distinct("user_id"))
+
+
 async def run_global_scan_cycle() -> Dict[str, Any]:
     """
-    The interval job: one shared fetch, then one match pass per registered
-    user — every user, no per-user opt-in/opt-out.
+    The interval job: one shared fetch, then one match pass per active
+    registered user — every user with an analysis on file, no per-user
+    opt-in/opt-out.
     """
     logger.info("Global scan cycle started")
 
@@ -89,7 +118,11 @@ async def run_global_scan_cycle() -> Dict[str, Any]:
         logger.exception("Global fetch step failed — matching will proceed against the existing pool")
         fetch_summary = {"fetched": 0, "saved": 0}
 
-    user_ids = [str(doc["_id"]) for doc in user_collection.find({}, {"_id": 1})]
+    active_user_ids = _get_active_user_ids()
+    user_ids = [
+        str(doc["_id"]) for doc in user_collection.find({}, {"_id": 1})
+        if str(doc["_id"]) in active_user_ids
+    ]
     total_new_matches = 0
     for user_id in user_ids:
         result = await run_scan_cycle(user_id)
@@ -114,8 +147,11 @@ async def send_daily_digest() -> None:
     logger.info("Daily digest job started")
     sent = 0
 
+    active_user_ids = _get_active_user_ids()
     for user_doc in user_collection.find({}):
         user_id = str(user_doc["_id"])
+        if user_id not in active_user_ids:
+            continue
         to_email = user_doc.get("email")
         if not to_email:
             continue
@@ -173,11 +209,41 @@ def _renew_scheduler_lock() -> None:
     )
 
 
-def start_scheduler(app) -> None:
+def get_worker_health() -> Dict[str, Any]:
     """
-    Starts the background AI Job Agent scheduler. No-op unless
-    agent_scheduler_enabled=true in .env, and only actually starts jobs on
-    the one process that wins the lock above.
+    Reads the lock renewal above as a heartbeat — no separate write path
+    needed. Because the lock doc has a TTL of _LOCK_TTL_SECONDS from its
+    last claimed_at, Mongo itself deletes it once a holder stops renewing
+    it, so a missing doc cleanly means "down" (never started, or crashed
+    long enough ago that it already expired) with no extra bookkeeping.
+    """
+    doc = scheduler_locks_collection.find_one({"_id": _LOCK_ID})
+    if not doc:
+        return {
+            "status": "down",
+            "holder": None,
+            "last_heartbeat_at": None,
+            "seconds_since_heartbeat": None,
+        }
+
+    age_seconds = (datetime.utcnow() - doc["claimed_at"]).total_seconds()
+    status = "healthy" if age_seconds < _LOCK_RENEW_SECONDS * 2 else "stale"
+    return {
+        "status": status,
+        "holder": doc.get("holder"),
+        "last_heartbeat_at": doc["claimed_at"],
+        "seconds_since_heartbeat": int(age_seconds),
+    }
+
+
+def start_scheduler() -> None:
+    """
+    Starts the background AI Job Agent scheduler. Called from worker.py —
+    a dedicated process, independent of the FastAPI app — so the scan
+    keeps running regardless of whether the API process is up. No-op
+    unless agent_scheduler_enabled=true in .env, and only actually starts
+    jobs on the one process that wins the lock below (guards against
+    accidentally running more than one worker instance at once).
     """
     if not settings.agent_scheduler_enabled:
         logger.info(

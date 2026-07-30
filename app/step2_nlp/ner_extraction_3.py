@@ -1,8 +1,14 @@
 """
 app/step2_nlp/3_ner_extractor.py — LLM-based NER Extractor
 
-Uses Gemini to read resume text + job description and return
-structured entities as JSON, instead of spaCy pattern matching.
+Uses Groq (OpenAI-compatible chat completions API, hosting open models
+like Llama) to read resume text + job description and return structured
+entities as JSON, instead of spaCy pattern matching. Previously used
+Gemini directly — switched because the Gemini free tier required a
+billing-enabled project to grant any quota at all (limit: 0 on every
+account tried), while Groq's free tier actually works for this use case.
+Plain `requests` against Groq's REST endpoint, no new SDK dependency —
+matches how job_source_fetcher.py already calls Adzuna/RemoteOK.
 """
 
 import os
@@ -10,33 +16,29 @@ import json
 import logging
 import time
 
+import requests
+
 logger = logging.getLogger(__name__)
 
-# Load .env so GEMINI_API_KEY is available even when not set in the shell
+# Load .env so GROQ_API_KEY is available even when not set in the shell
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# Lazy-initialize the Gemini client so a missing key only raises when
-# extract_entities() is actually called, not at import time.
-_genai_model = None
+_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+_GROQ_MODEL = "llama-3.3-70b-versatile"
 
-def _get_model():
-    global _genai_model
-    if _genai_model is not None:
-        return _genai_model
-    api_key = os.environ.get("GEMINI_API_KEY")
+
+def _get_api_key() -> str:
+    api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise EnvironmentError(
-            "GEMINI_API_KEY is not set. Add it to your .env file to enable "
+            "GROQ_API_KEY is not set. Add it to your .env file to enable "
             "LLM-based NER extraction."
         )
-    import google.generativeai as genai  # noqa: PLC0415
-    genai.configure(api_key=api_key)
-    _genai_model = genai.GenerativeModel("gemini-2.0-flash")
-    return _genai_model
+    return api_key
 
 
 PROMPT_TEMPLATE = """
@@ -53,6 +55,9 @@ IMPORTANT RULES:
 5. Do NOT include markdown, explanations, or any extra text.
 6. Every key must always exist.
 7. Use empty arrays ([]) if no information is found.
+8. EVERY array below must contain PLAIN STRINGS ONLY — never objects,
+   never nested fields. Each entry is one self-contained human-readable
+   line of text, not a structured record.
 
 Return JSON in EXACTLY this format:
 
@@ -69,19 +74,24 @@ Extraction Guidelines:
 - skills:
   Extract technical skills, programming languages, frameworks, libraries,
   databases, cloud platforms, developer tools, operating systems, and
-  software explicitly mentioned.
+  software explicitly mentioned. One skill per string, e.g. "Python".
 
 - education:
-  Extract degrees, majors, universities/colleges, and educational qualifications.
+  One string per degree, combining degree, major, and institution, e.g.
+  "B.S. Computer Science, State University, 2019" — not separate fields.
 
 - experience:
-  Extract job titles, internships, companies, and work experience descriptions.
+  One string per role, combining job title, company, and a short
+  description, e.g. "Senior Backend Engineer at TechCorp (2021-2024) —
+  built REST APIs serving 1M+ requests/day" — not separate fields.
 
 - projects:
-  Extract project names and brief descriptions if available.
+  One string per project, combining its name and a brief description,
+  e.g. "Real-time chat application — built with WebSockets and Redis".
 
 - certifications:
   Extract certifications, online courses, or professional credentials.
+  One certification per string.
 
 JOB DESCRIPTION:
 {job_description}
@@ -91,6 +101,29 @@ RESUME:
 """
 
 
+def _flatten_entities(parsed: dict) -> dict:
+    """
+    Defensive safety net: the prompt requires plain strings, but LLMs don't
+    always comply — coerce any stray objects/lists per entry into a single
+    readable string so this can never violate NERResult's List[str] schema
+    downstream, no matter what the model actually returned.
+    """
+    def _to_str(item):
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            return ", ".join(str(v) for v in item.values() if v)
+        return str(item)
+
+    flattened = {}
+    for key in ("skills", "education", "experience", "projects", "certifications"):
+        items = parsed.get(key) or []
+        if not isinstance(items, list):
+            items = [items]
+        flattened[key] = [_to_str(item) for item in items if item]
+    return flattened
+
+
 def extract_entities(resume_text: str, job_description: str) -> dict:
     _empty = {
         "skills": [], "education": [], "experience": [],
@@ -98,7 +131,7 @@ def extract_entities(resume_text: str, job_description: str) -> dict:
     }
 
     try:
-        llm = _get_model()
+        api_key = _get_api_key()
     except EnvironmentError as exc:
         logger.warning("NER skipped: %s", exc)
         return _empty
@@ -111,13 +144,25 @@ def extract_entities(resume_text: str, job_description: str) -> dict:
 
     try:
         start = time.perf_counter()
-        response = llm.generate_content(prompt)   # send prompt to Gemini
+        response = requests.post(
+            _GROQ_URL,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": _GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
         duration = time.perf_counter() - start
-        logger.info("Gemini entity extraction completed in %.1f seconds", duration)
+        logger.info("Groq entity extraction completed in %.1f seconds", duration)
 
-        raw_output = response.text.strip()
+        raw_output = response.json()["choices"][0]["message"]["content"].strip()
         raw_output = raw_output.replace("```json", "").replace("```", "").strip()
-        return json.loads(raw_output)             # convert JSON text → Python dict
+        parsed = json.loads(raw_output)            # convert JSON text → Python dict
+        return _flatten_entities(parsed)
     except Exception as exc:
         # LLM didn't return clean JSON or network error — fail safely,
         # same fallback behavior as before, now with a full traceback logged.

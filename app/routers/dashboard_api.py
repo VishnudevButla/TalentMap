@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends
 from app.core.db import analysis_collection, job_matches_collection, job_postings_collection, activity_log_collection, to_object_id
 from app.core.security import get_current_user
 from app.step4_agent import state as agent_state
+from app.step4_agent import scheduler as agent_scheduler
 from app.step4_agent.job_source_fetcher import SOURCES
 from app.services.market_insights import get_current_match_summary
 from app.services.market_trends_data import get_demand_skills, get_missing_skills_for_resume
@@ -95,6 +96,7 @@ async def dashboard_summary(user_id: str = Depends(get_current_user)):
             "new_matches_today": new_matches_today,
             "emails_sent_today": user_state.get("emails_sent_today", 0),
             "sources_monitored": len(SOURCES),
+            "worker": agent_scheduler.get_worker_health(),
         },
         "activity": activity,
         "ai_jobs_found_today": ai_jobs_found_today,

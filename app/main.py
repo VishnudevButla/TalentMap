@@ -21,13 +21,15 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api, market_trends_api
 from app.step1_api import upload_resume_1, resume_analyze_2, routes_history
 from app.step4_agent import routes_agent
-from app.step4_agent.scheduler import start_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # The AI Job Agent scheduler no longer starts here — it runs in a
+    # separate process (worker.py) so scans keep happening regardless of
+    # whether this API process is up. Run `python worker.py` alongside
+    # this app; see README.md's "Running the app" section.
     logger.info("TalentMap API starting up")
-    start_scheduler(app)
     yield
     logger.info("TalentMap API shutting down")
 
@@ -45,7 +47,27 @@ app.add_middleware(
 )
 
 # -- Static assets (CSS/JS shared by every template) --
-app.mount("/static", StaticFiles(directory=str(project_root / "static")), name="static")
+class _RevalidateStaticFiles(StaticFiles):
+    """
+    StaticFiles with no explicit Cache-Control header lets browsers use
+    heuristic caching (RFC 7234) — they can keep serving an old cached
+    copy of a .js/.css file for hours after it changed on disk, with no
+    request even reaching the server, since there's nothing forcing a
+    freshness check. That silently reintroduces pre-edit behavior (stale
+    UI logic, "stuck" states) that looks like a real bug but is really
+    just a stale browser cache. no-cache forces a conditional GET
+    (If-None-Match/If-Modified-Since) on every load — the server still
+    replies 304 and skips re-sending unchanged bytes, so this doesn't
+    disable caching's bandwidth benefit, it just guarantees every load
+    reflects what's actually on disk right now.
+    """
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", _RevalidateStaticFiles(directory=str(project_root / "static")), name="static")
 
 # -- Register Routers --
 app.include_router(registration.router)

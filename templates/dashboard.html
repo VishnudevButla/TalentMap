@@ -19,7 +19,16 @@
         </div>
       </div>
     </div>
-    <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+    <div style="display:flex;align-items:center;gap:.9rem">
+      <div style="text-align:right">
+        <button class="btn-refresh" id="refreshDashboardBtn" type="button" aria-label="Refresh dashboard data">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span id="refreshDashboardLabel">Refresh</span>
+        </button>
+        <p class="dashboard-last-updated" id="dashboardLastUpdated"></p>
+      </div>
+      <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+    </div>
   </div>
 
   <div class="stat-row">
@@ -62,7 +71,7 @@
       <div class="card">
         <div class="card-head">
           <h2>AI Job Agent</h2>
-          <span class="stat-status good">Global scan</span>
+          <span class="stat-status" id="agentWorkerBadge">Loading…</span>
         </div>
         <p class="card-sub" style="margin:0 0 .3rem">Next scan in</p>
         <div class="agent-countdown" id="agentCountdown" data-seconds="0">00:00:00</div>

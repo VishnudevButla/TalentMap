@@ -104,18 +104,29 @@ def calculate_weighted_component_similarity(
     weights: Dict[str, float]
 ) -> Dict[str, Any]:
     """
-    Calculates weighted similarity across resume components.
+    Calculates weighted similarity across resume/job components, comparing
+    only the components that actually exist on BOTH sides.
+
+    A component missing on either side (no text was ever extracted for it)
+    is excluded from the average entirely — its weight is NOT counted in
+    the denominator — rather than being scored 0.0 while still counting at
+    full weight. The old behavior meant "no data" and "compared and did
+    not match" were indistinguishable and produced the same penalty; a job
+    missing one 40%-weighted component could never score above 60% no
+    matter how well everything else fit. individual_scores reports None
+    (not 0.0) for an excluded component, so a caller/UI can tell "absent"
+    from "compared, low similarity" apart.
 
     Args:
         resume_components: Dictionary containing embeddings for
-            skills, experience, projects, certifications.
-        job_components: Same structure for the job description.
+            skills, experience, education, certifications.
+        job_components: Same structure for the job.
         weights: Weight assigned to each component.
 
     Returns:
         {
-            "individual_scores": {...},
-            "weighted_average_score": 84.32
+            "individual_scores": {"skills": 0.82, "education": None, ...},
+            "weighted_average_score": 84.32 or None if nothing was comparable
         }
     """
 
@@ -129,33 +140,28 @@ def calculate_weighted_component_similarity(
         resume_vector = resume_components.get(component)
         job_vector = job_components.get(component)
 
-        if (
-            resume_vector is None
-            or job_vector is None
-            or resume_vector.size == 0
-            or job_vector.size == 0
-        ):
-            similarity = 0.0
-        else:
-            similarity = calculate_similarity(
-                resume_vector,
-                job_vector
-            )
+        resume_has_data = resume_vector is not None and resume_vector.size > 0
+        job_has_data = job_vector is not None and job_vector.size > 0
 
+        if not (resume_has_data and job_has_data):
+            individual_scores[component] = None
+            continue
+
+        similarity = calculate_similarity(resume_vector, job_vector)
         individual_scores[component] = round(similarity, 4)
 
         weighted_sum += similarity * weight
         total_weight += weight
 
     final_score = (
-        (weighted_sum / total_weight) * 100
+        round((weighted_sum / total_weight) * 100, 2)
         if total_weight > 0
-        else 0.0
+        else None
     )
 
     return {
         "individual_scores": individual_scores,
-        "weighted_average_score": round(final_score, 2)
+        "weighted_average_score": final_score,
     }
 
 
@@ -174,7 +180,7 @@ def embed_components(
     {
         "skills": ["Python", "SQL"],
         "experience": ["Software Engineer"],
-        "projects": ["Resume Parser"],
+        "education": ["B.S. Computer Science"],
         "certifications": ["AWS CCP"]
     }
 
@@ -192,7 +198,7 @@ def embed_components(
     for key in [
         "skills",
         "experience",
-        "projects",
+        "education",
         "certifications"
     ]:
 
@@ -217,6 +223,13 @@ def embed_components(
 DEFAULT_WEIGHTS = {
     "skills": 0.40,
     "experience": 0.30,
-    "projects": 0.20,
-    "certifications": 0.10,
+    "education": 0.15,
+    "certifications": 0.15,
 }
+# "projects" was dropped — a job posting has no structural equivalent to a
+# resume's personal projects, so that component was always comparing a
+# resume's real project text against the same raw job description reused
+# for every other component (see job_entity_extractor.py's docstring).
+# Under the honest-missing-data scoring above, an always-absent component
+# would just never contribute anyway; removing it here is the same
+# outcome without carrying dead weight in the config.

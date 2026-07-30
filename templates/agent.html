@@ -11,48 +11,47 @@
   <div class="topbar">
     <div>
       <h1>AI Job Agent</h1>
-      <p class="card-sub">Scans job sources on a fixed global schedule and matches them against every user's latest resume analysis.</p>
+      <p class="card-sub">Your agent continuously watches new job postings and matches them against your resume — no setup required.</p>
     </div>
-    <span class="stat-status good">Always on</span>
+    <span class="stat-status" id="agentWorkerBadge">Loading…</span>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>AI Insights</h2></div>
+    <p class="card-sub" style="margin:0 0 .6rem">What your agent has learned from the job market, for you specifically.</p>
+    <div id="agentInsights"><p class="card-sub">Loading…</p></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Recent Discoveries</h2></div>
+    <p class="card-sub" style="margin:0 0 .6rem">Real roles your agent has found and scored against your resume.</p>
+    <div id="recentDiscoveries"><p class="card-sub">Loading…</p></div>
   </div>
 
   <div class="agent-grid">
     <div class="card">
-      <div class="card-head"><h2>Next scan</h2></div>
-      <div class="agent-countdown" id="agentCountdown" data-seconds="0">00:00:00</div>
-      <p class="card-sub">Counts down to the next global scan, shared by every user — there's no manual trigger, the countdown reaching zero is what starts it.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h2>Last scan</h2></div>
-      <p class="card-sub" id="lastScanWhen" style="margin:0 0 .8rem">Loading…</p>
-      <div class="agent-stats">
-        <div><span class="agent-stat-value" id="lastScanFetched">—</span><span class="agent-stat-label">Jobs Fetched</span></div>
-        <div><span class="agent-stat-value" id="lastScanSaved">—</span><span class="agent-stat-label">New Postings Saved</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h2>Your stats</h2></div>
+      <div class="card-head"><h2>Your Stats</h2></div>
+      <p class="card-sub" style="margin:0 0 .6rem">Your personal results from the agent's work.</p>
       <div class="agent-stats">
         <div><span class="agent-stat-value" id="statNewMatches">0</span><span class="agent-stat-label">New Matches Today</span></div>
         <div><span class="agent-stat-value" id="statTotalMatches">0</span><span class="agent-stat-label">Total Matches</span></div>
         <div><span class="agent-stat-value" id="statEmailsSent">0</span><span class="agent-stat-label">Emails Sent Today</span></div>
-        <div><span class="agent-stat-value" id="statJobsInPool">0</span><span class="agent-stat-label">Jobs In Pool</span></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-head"><h2>Sources</h2></div>
+      <div class="card-head"><h2>Platform Stats</h2></div>
+      <p class="card-sub" style="margin:0 0 .6rem">How the agent is running for every user, shared infrastructure.</p>
       <div class="agent-stats">
+        <div><span class="agent-stat-value" id="statJobsInPool">0</span><span class="agent-stat-label">Jobs In Pool</span></div>
         <div><span class="agent-stat-value" id="statSources">0</span><span class="agent-stat-label">Sources Monitored</span></div>
+        <div><span class="agent-stat-value" id="lastScanFetched">—</span><span class="agent-stat-label">Jobs Fetched Last Run</span></div>
+        <div><span class="agent-stat-value" id="lastScanSaved">—</span><span class="agent-stat-label">New Postings Saved</span></div>
       </div>
-      <p class="settings-note" id="sourcesList">Loading…</p>
-    </div>
-
-    <div class="card" style="grid-column: 1 / -1">
-      <div class="card-head"><h2>Recent scans</h2></div>
-      <div id="recentScans"><p class="card-sub">Loading…</p></div>
+      <div class="platform-status-row">
+        <span class="card-sub" id="lastScanWhen">Loading…</span>
+        <span class="next-scan-inline">Next scan in <span id="agentCountdown" data-seconds="0">00:00:00</span></span>
+      </div>
     </div>
   </div>
 {% endblock %}

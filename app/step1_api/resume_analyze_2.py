@@ -12,20 +12,33 @@ Flow:
    b. preprocess.py     → clean text for NER
    c. ner_extractor.py  → extract skills, education, experience using Gemini
 5. Save extracted entities to analysis_collection
-6. Return structured results to client
+6. Kick off matching against jobs already in job_postings_collection
+   (app/step4_agent/matcher.py) as a FastAPI background task — no manual
+   JD, no Adzuna/RemoteOK call, just matching against whatever the worker
+   has already fetched.
+7. Return structured results to the client immediately — the response
+   does not wait for step 6 to finish.
 
-There is no manual job-description input and no match score computed here.
-Scoring is entirely the AI Job Agent's job: app/step4_agent/matcher.py
-embeds these entities and scores them against real, live job postings on
-every scan cycle — a resume is scored against many real jobs, not one
-pasted-in JD. Predicted role and salary, and the dashboard's match-score
-tile, are all derived from those real job matches — see
-app/services/market_insights.py, served by GET /api/dashboard/summary.
+There is no manual job-description input — a resume is scored against
+every real job posting currently stored, not one pasted-in JD. The
+worker process (worker.py, app/step4_agent/scheduler.py) re-runs this
+same matching on its own schedule too, so matches stay fresh as new
+postings arrive; this endpoint's background task is purely to start that
+scoring immediately instead of waiting for the worker's next cycle —
+scoring a brand-new resume against the full pool can take from seconds to
+low minutes depending on pool size, so it must not block the HTTP
+response (a real measured run took 382s against 450 postings before
+matcher.py cached job embeddings; it's an unbounded first pass no matter
+what, so it runs after the response is sent, not before). `match` is
+always None in this endpoint's response — the client re-fetches it from
+GET /api/dashboard/summary once the background task lands. Predicted role
+and salary, and the dashboard's match-score tile, are all derived from
+the same real job matches — see app/services/market_insights.py.
 """
 
 import logging
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from bson import ObjectId
 
@@ -36,6 +49,7 @@ from app.step2_nlp.preprocess_2 import clean_text_for_ner
 from app.step2_nlp.ner_extraction_3 import extract_entities
 from app.schemas.result_schema import AnalysisResultResponse
 from app.services.activity_log import log_activity
+from app.step4_agent.matcher import run_matching_for_user
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +68,7 @@ class AnalyzeRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("/analyze", response_model=AnalysisResultResponse)
-async def analyze_resume(req: AnalyzeRequest):
+async def analyze_resume(req: AnalyzeRequest, background_tasks: BackgroundTasks):
     resume_id = req.resume_id
 
     logger.info("Resume analysis started: resume_id=%s", resume_id)
@@ -122,6 +136,17 @@ async def analyze_resume(req: AnalyzeRequest):
         job_matches_collection.delete_many(
             {"user_id": result_doc["user_id"], "resume_id": {"$ne": resume_id}}
         )
+
+        # Start matching against jobs already in job_postings_collection
+        # right now, rather than waiting for the worker's next scheduled
+        # cycle — but as a background task so the HTTP response doesn't
+        # wait for it (a full pass against a large pool can take minutes,
+        # see this module's docstring). No Adzuna/RemoteOK call happens
+        # here, run_matching_for_user only reads from Mongo. match stays
+        # None in this response either way — the client re-fetches it from
+        # GET /api/dashboard/summary once this task lands.
+        background_tasks.add_task(run_matching_for_user, result_doc["user_id"])
+        result_doc["match"] = None
 
         log_activity(
             user_id=result_doc["user_id"],

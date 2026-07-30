@@ -79,3 +79,39 @@ TalentMap/
 
 3. **Dashboard Reporting**:
    - Streamlit retrieves user uploads and pipeline histories using `GET /history/{user_id}` and renders interactive visualization charts.
+
+---
+
+## Running the app
+
+*(Note: the sections above describe the original architectural blueprint and are out of date — the app is actually FastAPI + Jinja2 templates, Gemini-based NER, and BGE sentence-transformer embeddings, not Streamlit/spaCy/TF-IDF. This section reflects what's actually implemented.)*
+
+The app is two independent processes that only communicate through MongoDB — the API never starts the scheduler itself, and the worker never serves HTTP:
+
+- **Web** (`app/main.py`) — FastAPI: auth, resume upload/analyze, dashboard, history, activity, market trends, job matches, settings. No background scheduling.
+- **Worker** (`worker.py`) — runs the AI Job Agent scheduler: fetches jobs globally (Adzuna + RemoteOK) on a fixed interval, matches every registered user against the shared pool, sends the daily digest email, and updates scan state. Runs forever until stopped; safe to run more than one instance at once (a Mongo-based leader lock ensures only one actually does the work).
+
+### Development
+
+Two terminals, same `.env`:
+
+```
+# Terminal 1 — the API
+uvicorn app.main:app --reload
+
+# Terminal 2 — the scheduler
+python worker.py
+```
+
+The web app works fine with the worker not running — you just won't get new job postings or matches until you start it. `agent_scheduler_enabled` must also be `true` in `.env`, or the worker exits immediately after logging that it has nothing to do.
+
+### Production
+
+Same two processes, just run somewhere with continuous uptime (a local terminal doesn't count — closing it kills the process along with any scheduled scan mid-countdown). Any host that can run two long-lived processes works — e.g. two services on Railway/Render/Fly.io, or two systemd units on a VPS:
+
+```
+web:    uvicorn app.main:app --host 0.0.0.0 --port 8000
+worker: python worker.py
+```
+
+Both read the same `MONGODB_URI` — no other coordination needed between them.

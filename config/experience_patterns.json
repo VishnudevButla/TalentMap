@@ -1,0 +1,8 @@
+[
+  {"pattern": "\\d+\\+?\\s*(?:-|to)?\\s*\\d*\\+?\\s*years?\\s+(?:of\\s+)?(?:relevant\\s+|professional\\s+|hands-on\\s+)?experience", "label": "__match__"},
+  {"pattern": "\\bentry[- ]level\\b", "label": "Entry-level"},
+  {"pattern": "\\bjunior\\b", "label": "Junior-level"},
+  {"pattern": "\\bmid[- ]level\\b|\\bmid[- ]senior\\b", "label": "Mid-level"},
+  {"pattern": "\\bsenior[- ]level\\b|\\bsenior\\b", "label": "Senior-level"},
+  {"pattern": "\\blead\\b|\\bprincipal\\b|\\bstaff\\b", "label": "Lead/Principal-level"}
+]

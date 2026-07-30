@@ -49,12 +49,11 @@ numpy==1.26.4
 pydantic-settings==2.3.1
 pydantic==2.7.4
 
-google-generativeai
 sentence_transformers
 
 #brevo
 sib-api-v3-sdk==7.6.0
 
-# AI Job Agent scheduler — TODO(you): actually start it, see
-# app/step4_agent/scheduler.py's start_scheduler()
+# AI Job Agent scheduler — runs in worker.py, a process separate from the
+# FastAPI app (app/main.py) — see worker.py's module docstring.
 APScheduler==3.10.4

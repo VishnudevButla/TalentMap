@@ -19,7 +19,12 @@ can treat all jobs identically regardless of source:
     "location":     str,
     "remote_type":  str,                 # "remote" | "onsite" | "hybrid"
     "url":          str,                 # direct application / listing link
-    "skills_detected": List[str],        # populated by run_job_fetch_cycle()
+    "skills_detected": List[str],        # set by run_job_fetch_cycle() via
+                                          # job_entity_extractor.py — real for
+                                          # both sources, not just RemoteOK
+    "job_entities": Dict[str, List[str]],# full structured breakdown (see
+                                          # job_entity_extractor.py) — what
+                                          # matcher.py actually scores against
     "salary_min":   Optional[float],
     "salary_max":   Optional[float],
     "posted_at":    datetime,
@@ -39,6 +44,7 @@ import requests
 
 from app.config import settings
 from app.core.db import job_postings_collection, analysis_collection
+from app.step4_agent.job_entity_extractor import extract_job_entities
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +146,9 @@ def fetch_adzuna_jobs(
             "location": raw.get("location", {}).get("display_name", ""),
             "remote_type": "remote" if _is_remote(title, description) else "onsite",
             "url": raw.get("redirect_url", ""),
-            "skills_detected": [],                   # populated by run_job_fetch_cycle
+            "skills_detected": [],                   # placeholder — overwritten by
+                                                       # run_job_fetch_cycle() via
+                                                       # job_entity_extractor.py
             "salary_min": raw.get("salary_min"),
             "salary_max": raw.get("salary_max"),
             "posted_at": _parse_datetime(raw.get("created")),
@@ -207,7 +215,10 @@ def fetch_remoteok_jobs() -> List[Dict[str, Any]]:
             "location": raw.get("location", "Remote"),
             "remote_type": "remote",               # RemoteOK is 100 % remote
             "url": raw.get("url", f"https://remoteok.com/remote-jobs/{raw.get('slug', '')}"),
-            "skills_detected": raw.get("tags", []),  # RemoteOK provides skill tags
+            "skills_detected": raw.get("tags", []),  # placeholder — also overwritten by
+                                                      # run_job_fetch_cycle() so both
+                                                      # sources go through the same
+                                                      # extractor, not RemoteOK's raw tags
             "salary_min": _to_float(raw.get("salary_min")),
             "salary_max": _to_float(raw.get("salary_max")),
             "posted_at": _parse_datetime(raw.get("date")),
@@ -244,7 +255,15 @@ def save_new_jobs(jobs: List[Dict[str, Any]]) -> int:
                     "source": job["source"],
                     "external_id": job["external_id"],
                 },
-                {"$set": {**job, "fetched_at": datetime.now(tz=timezone.utc)}},
+                {
+                    # fetched_at moves every time this job is seen again —
+                    # the dashboard's "new postings since last scan" stat
+                    # depends on that. created_at is set once, only on
+                    # first insert, and never touched again — matcher.py's
+                    # incremental `since` scoping depends on THAT instead.
+                    "$set": {**job, "fetched_at": datetime.now(tz=timezone.utc)},
+                    "$setOnInsert": {"created_at": datetime.now(tz=timezone.utc)},
+                },
                 upsert=True,
             )
             if result.upserted_id or result.modified_count > 0:
@@ -315,6 +334,16 @@ def run_job_fetch_cycle(queries: Optional[List[str]] = None) -> Dict[str, int]:
     for query in queries:
         all_jobs.extend(fetch_adzuna_jobs(query=query))
         time.sleep(_REQUEST_DELAY_SEC)
+
+    # Structured entity extraction — one deterministic pass per job, before
+    # it's saved. Populates skills_detected (same field, same shape every
+    # existing reader already expects) for BOTH sources uniformly, plus
+    # the new job_entities breakdown matcher.py scores against. See
+    # app/step4_agent/job_entity_extractor.py for why this exists.
+    for job in all_jobs:
+        entities = extract_job_entities(job.get("title", ""), job.get("description", ""))
+        job["skills_detected"] = entities["skills"]
+        job["job_entities"] = entities
 
     saved = save_new_jobs(all_jobs)
     logger.info(

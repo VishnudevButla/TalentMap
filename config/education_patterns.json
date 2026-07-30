@@ -1,0 +1,7 @@
+[
+  {"pattern": "\\bph\\.?d\\.?\\b|\\bdoctorate\\b|\\bdoctoral\\b", "label": "PhD"},
+  {"pattern": "\\bmaster'?s\\b|\\bm\\.?s\\.?\\b|\\bm\\.?a\\.?\\b|\\bmba\\b|\\bm\\.?eng\\.?\\b", "label": "Master's degree"},
+  {"pattern": "\\bbachelor'?s\\b|\\bb\\.?s\\.?\\b|\\bb\\.?a\\.?\\b|\\bb\\.?eng\\.?\\b|\\bundergraduate degree\\b", "label": "Bachelor's degree"},
+  {"pattern": "\\bassociate'?s degree\\b", "label": "Associate's degree"},
+  {"pattern": "\\bhigh school diploma\\b|\\bged\\b", "label": "High school diploma"}
+]
