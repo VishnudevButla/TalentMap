@@ -29,20 +29,20 @@ class Settings(BaseSettings):
     mongodb_uri: str
 
     # AWS S3
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    aws_bucket_name: str
-    aws_region: str
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[str] = None
+    aws_bucket_name: Optional[str] = None
+    aws_region: str = "us-east-1"
 
     # JWT configuration
     secret_key: str = "changeme"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    #adzuna - used for searching for jobs
+    # adzuna - used for searching for jobs
     JOB_API_PROVIDER: str = "adzuna"
-    ADZUNA_APP_ID: str
-    ADZUNA_APP_KEY: str
+    ADZUNA_APP_ID: Optional[str] = None
+    ADZUNA_APP_KEY: Optional[str] = None
     ADZUNA_BASE_URL: str = "https://api.adzuna.com/v1/api"
     REMOTEOK_BASE_URL: str = "https://remoteok.com/api"
 

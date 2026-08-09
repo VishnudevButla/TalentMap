@@ -67,7 +67,9 @@ class _RevalidateStaticFiles(StaticFiles):
         return response
 
 
-app.mount("/static", _RevalidateStaticFiles(directory=str(project_root / "static")), name="static")
+static_dir = project_root / "static"
+static_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static", _RevalidateStaticFiles(directory=str(static_dir)), name="static")
 
 # -- Register Routers --
 app.include_router(registration.router)

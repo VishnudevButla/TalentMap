@@ -22,7 +22,7 @@ from app.core.db import job_postings_collection
 logger = logging.getLogger(__name__)
 
 
-MAX_DIGEST_MATCHES = 3
+MAX_DIGEST_MATCHES = 10
 
 
 def send_match_alert_email(to_email: str, matches: List[Dict[str, Any]]) -> bool:
