@@ -41,6 +41,39 @@
           <span class="switch-track"></span>
         </label>
       </div>
+
+      <div class="settings-row" style="margin-top:1.1rem">
+        <div>
+          <h3>How often</h3>
+          <p>Controls when the AI Job Agent actually sends mail — read directly by the worker, not just stored.</p>
+        </div>
+        <select class="settings-select" id="emailFrequencySelect">
+          <option value="immediate">Immediately, per match</option>
+          <option value="daily">Daily digest</option>
+          <option value="weekly">Weekly digest</option>
+          <option value="never">Never</option>
+        </select>
+      </div>
+
+      <div class="settings-row" id="digestHourRow" style="margin-top:1.1rem">
+        <div>
+          <h3>Daily digest time</h3>
+          <p>UTC hour the daily digest goes out. Only applies when "How often" is Daily.</p>
+        </div>
+        <select class="settings-select" id="digestHourSelect"></select>
+      </div>
+
+      <div class="settings-row" style="margin-top:1.1rem">
+        <div>
+          <h3>Match threshold</h3>
+          <p>Only matches at or above this score count as "worth emailing about" — also used for your Activity feed.</p>
+        </div>
+        <div class="threshold-control">
+          <input type="range" min="0" max="100" step="5" id="matchThresholdRange" />
+          <span id="matchThresholdValue">70%</span>
+        </div>
+      </div>
+
       <p class="settings-note" id="emailAlertsNote"></p>
     </div>
 

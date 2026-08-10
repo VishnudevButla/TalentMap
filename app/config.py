@@ -85,6 +85,15 @@ class Settings(BaseSettings):
     # link in digest emails. Override in .env once deployed.
     app_base_url: str = "http://localhost:8000"
 
+    # Google OAuth ("Continue with Google") — from a Google Cloud Console
+    # OAuth 2.0 Client ID (Web application type). Both blank means the
+    # feature is unconfigured; the login/callback routes return a clear
+    # 503 instead of crashing until real credentials are set. The redirect
+    # URI you register in Google Cloud must exactly match
+    # f"{app_base_url}/api/auth/google/callback".
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+
     # Logging — see app/core/logger.py. One of DEBUG/INFO/WARNING/ERROR/CRITICAL.
     log_level: str = "INFO"
 

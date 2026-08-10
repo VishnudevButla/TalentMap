@@ -1,9 +1,11 @@
 {% extends "layouts/base_app.html" %}
+{% from "partials/icons.html" import trending_up %}
 
 {% block title %}Market Trends — TalentMap{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/market_trends.css') }}" />
 {% endblock %}
 
@@ -11,60 +13,77 @@
   <div class="topbar">
     <div>
       <h1>Market Trends</h1>
-      <p class="card-sub">Intelligence personalised to your resume</p>
+      <p class="card-sub">Real intelligence from live tracked postings, personalized to your resume</p>
     </div>
     <span class="chip" id="mtUpdatedAt">Loading…</span>
   </div>
 
-  <div class="stat-row mt-stat-row">
-    <div class="card">
+  <div class="stat-row stat-row-4">
+    <div class="card stat-card">
       <span class="stat-label">Market fit</span>
       <div class="mt-fit-row">
         <div class="mt-fit-score" id="mtFitScore">—</div>
         <span class="stat-status" id="mtFitLabel"></span>
       </div>
     </div>
-    <div class="card">
-      <span class="stat-label">Jobs analysed</span>
+    <div class="card stat-card">
+      <span class="stat-label">Active opportunities</span>
       <div class="stat-figure" id="mtJobsAnalysed">—</div>
       <p class="stat-caption">in your tracked postings pool</p>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><h2>Market insights</h2></div>
-    <div id="mtInsights" class="mt-insights">
-      <p class="card-sub">Loading…</p>
+    <div class="card stat-card">
+      <span class="stat-label">Career paths found</span>
+      <div class="stat-figure" id="mtPathCount">—</div>
+      <p class="stat-caption">real matched roles, deduped</p>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-label">AI Job Agent</span>
+      <div class="mt-agent-countdown" id="mtAgentCountdown">00:00:00</div>
+      <p class="stat-caption" id="mtAgentCaption">Next scan</p>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-head"><h2>Skill demand vs. your profile</h2><span class="card-sub" style="margin:0">Live from tracked postings</span></div>
-    <div id="mtDemandSkills">
-      <div class="empty-state"><p>Loading…</p></div>
+  <div class="mt-insight-row">
+    <div class="mt-insight-col">
+      <div class="card">
+        <div class="card-head"><h2>Market insights</h2></div>
+        <div id="mtInsights" class="mt-insights">
+          <p class="card-sub">Loading…</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Opportunity skills</h2></div>
+        <div id="mtOpportunitySkills" class="mt-opp-wrap"><p class="card-sub">Loading…</p></div>
+      </div>
+    </div>
+
+    <div class="card mt-demand-card">
+      <div class="card-head"><h2>Skill demand vs. your profile</h2><span class="card-sub" style="margin:0">Live from tracked postings</span></div>
+      <div id="mtDemandSkills">
+        <div class="empty-state"><p>Loading…</p></div>
+      </div>
     </div>
   </div>
 
   <div class="jobs-grid mt-two-col">
     <div class="card">
-      <div class="card-head"><h2>Opportunity skills</h2></div>
-      <div id="mtOpportunitySkills"><div class="empty-state"><p>Loading…</p></div></div>
-    </div>
-    <div class="card">
       <div class="card-head"><h2>Role demand</h2></div>
       <div id="mtRoleDemand"><div class="empty-state"><p>Loading…</p></div></div>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><h2>Your career paths</h2></div>
-    <div id="mtCareerPaths" class="mt-career-paths">
-      <div class="empty-state"><p>Loading…</p></div>
+    <div class="card">
+      <div class="card-head"><h2>Your career paths</h2></div>
+      <div id="mtCareerPaths" class="mt-career-paths">
+        <div class="empty-state"><p>Loading…</p></div>
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2>Market momentum</h2><span class="card-sub" style="margin:0">Last ~30 days</span></div>
+    <div class="card-head">
+      <h2 class="card-head-icon-title">{{ trending_up() }}Market momentum</h2>
+      <span class="card-sub" style="margin:0">Recent vs. prior tracking window</span>
+    </div>
     <div id="mtMomentum">
       <div class="empty-state"><p>Loading…</p></div>
     </div>
@@ -72,5 +91,6 @@
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{{ url_for('static', path='js/agent-countdown.js') }}"></script>
   <script src="{{ url_for('static', path='js/market-trends.js') }}"></script>
 {% endblock %}

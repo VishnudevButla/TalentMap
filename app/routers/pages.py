@@ -64,7 +64,9 @@ async def settings_page(request: Request):
         "request": request,
         "active_nav": "settings",
         "integrations": {
-            "job_api_configured": bool(app_settings.job_api_key),
+            # Settings has no "job_api_key" field — the real fields are
+            # provider-specific (Adzuna needs both an app ID and key).
+            "job_api_configured": bool(app_settings.ADZUNA_APP_ID and app_settings.ADZUNA_APP_KEY),
             "email_configured": app_settings.email_enabled,
         },
     }
@@ -85,4 +87,14 @@ async def matches_page(request: Request):
     # top few; this page is the full, unabridged, filterable list.
     return templates.TemplateResponse(
         "matches.html", {"request": request, "active_nav": "matches"}
+    )
+
+
+@router.get("/matches/{job_id}")
+async def match_detail_page(request: Request, job_id: str):
+    # job_id isn't used server-side — the page is client-hydrated from
+    # GET /api/jobs/matches/{job_id} (see static/js/job-detail.js), same
+    # pattern as every other page in this app.
+    return templates.TemplateResponse(
+        "job_detail.html", {"request": request, "active_nav": "matches"}
     )

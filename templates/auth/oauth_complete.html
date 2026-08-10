@@ -1,0 +1,25 @@
+{% extends "layouts/base_auth.html" %}
+
+{% block title %}Signing you in — TalentMap{% endblock %}
+{% block description %}Completing Google sign-in.{% endblock %}
+
+{% block content %}
+  <div class="auth-card oauth-complete-card" role="main">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
+      <span class="brand-name">Talent<em>Map</em></span>
+    </div>
+
+    <div id="oauthSpinner" class="oauth-spinner" aria-hidden="true"></div>
+    <h1 class="card-title" id="oauthStatusTitle">Signing you in…</h1>
+    <p class="card-sub-lead" id="oauthStatusSub">Finishing your Google sign-in, one moment.</p>
+
+    <div id="oauthErrorActions" class="card-footer" style="display:none">
+      <a href="/login" class="link">Back to sign in</a>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/auth-oauth-complete.js') }}"></script>
+{% endblock %}

@@ -14,6 +14,9 @@ Two main functions used across the app:
    - Used when you want to give the frontend a direct download link
      without making the S3 bucket fully public
 
+3. delete_file(s3_key) → None
+   - Removes an object from the bucket (used by resume deletion)
+
 S3 client is initialized once at module load using credentials from config.py
 """
 
@@ -82,6 +85,19 @@ def download_file(s3_key: str) -> bytes:
     except ClientError as e:
         logger.error("S3 download failed: key=%s error=%s", s3_key, e)
         raise RuntimeError(f"Failed to download file: {e}")
+
+def delete_file(s3_key: str) -> None:
+    """
+    Delete a file from S3. Used by resume deletion (routes_history.py) —
+    S3 delete_object is idempotent (no error if the key is already gone),
+    so this is safe to call even if the object was already removed.
+    """
+    try:
+        s3.delete_object(Bucket=settings.aws_bucket_name, Key=s3_key)
+        logger.info("Deleted file from S3: key=%s", s3_key)
+    except ClientError as e:
+        logger.error("S3 delete failed: key=%s error=%s", s3_key, e)
+        raise
 
 ## WE CAN USE THIS TO ACCESS THE RESUME FROM THE URL.......WE'll uncomment it while checking S3
 # def get_presigned_url(

@@ -75,6 +75,10 @@ def _default_state(user_id: str) -> Dict[str, Any]:
         "counters_reset_date": datetime.utcnow().date().isoformat(),
         "last_scan_status": None,
         "last_error": None,
+        # When this user last actually received an email (digest or
+        # immediate) — scheduler.py uses this to gate "weekly" frequency
+        # (only send if >=7 days since last) without a separate collection.
+        "last_digest_sent_at": None,
     }
 
 
@@ -108,3 +112,19 @@ def advance_scan_clock(user_id: str, status: str = "ok", last_error: str = None)
     agent_state_collection.update_one({"user_id": user_id}, {"$set": updated}, upsert=True)
     logger.debug("Agent state updated: user_id=%s status=%s", user_id, status)
     return {**doc, **updated}
+
+
+def record_digest_sent(user_id: str) -> None:
+    """
+    Called after a real email actually sends (daily digest or an
+    "immediate"-frequency send from run_scan_cycle) — the one durable
+    signal send_daily_digest's "weekly" gating checks against.
+    """
+    doc = ensure_agent_state(user_id)
+    doc = _reset_daily_counters_if_needed(doc)
+    agent_state_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_digest_sent_at": datetime.utcnow(), "counters_reset_date": doc["counters_reset_date"]},
+         "$inc": {"emails_sent_today": 1}},
+        upsert=True,
+    )

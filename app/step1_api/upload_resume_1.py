@@ -31,9 +31,19 @@ async def upload_resume(
             "s3_key": s3_key,
             "status": "uploaded",
             "uploaded_at": datetime.utcnow(),
+            "is_active": True,
         }
 
         result = resume_collection.insert_one(document)
+        # Every upload is this user's new current resume — there's no
+        # separate "add a second resume alongside the active one" concept,
+        # uploading always replaces. Demote every other resume so exactly
+        # one stays active (see routes_history.py's GET /history, which
+        # surfaces this as "Current" vs "Previous").
+        resume_collection.update_many(
+            {"user_id": user_id, "_id": {"$ne": result.inserted_id}},
+            {"$set": {"is_active": False}},
+        )
     except Exception:
         logger.exception("Resume upload failed: user_id=%s", user_id)
         raise

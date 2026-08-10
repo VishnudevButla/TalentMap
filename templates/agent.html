@@ -35,6 +35,7 @@
       <div class="agent-stats">
         <div><span class="agent-stat-value" id="statNewMatches">0</span><span class="agent-stat-label">New Matches Today</span></div>
         <div><span class="agent-stat-value" id="statTotalMatches">0</span><span class="agent-stat-label">Total Matches</span></div>
+        <div><span class="agent-stat-value" id="statHighQuality">0</span><span class="agent-stat-label">High-Quality Matches</span></div>
         <div><span class="agent-stat-value" id="statEmailsSent">0</span><span class="agent-stat-label">Emails Sent Today</span></div>
       </div>
     </div>
@@ -44,14 +45,27 @@
       <p class="card-sub" style="margin:0 0 .6rem">How the agent is running for every user, shared infrastructure.</p>
       <div class="agent-stats">
         <div><span class="agent-stat-value" id="statJobsInPool">0</span><span class="agent-stat-label">Jobs In Pool</span></div>
-        <div><span class="agent-stat-value" id="statSources">0</span><span class="agent-stat-label">Sources Monitored</span></div>
         <div><span class="agent-stat-value" id="lastScanFetched">—</span><span class="agent-stat-label">Jobs Fetched Last Run</span></div>
         <div><span class="agent-stat-value" id="lastScanSaved">—</span><span class="agent-stat-label">New Postings Saved</span></div>
+        <div><span class="agent-stat-value" id="statUsersMatched">—</span><span class="agent-stat-label">Users Matched Last Run</span></div>
+        <div><span class="agent-stat-value" id="statTotalNewMatches">—</span><span class="agent-stat-label">Matches Generated Last Run</span></div>
       </div>
       <div class="platform-status-row">
         <span class="card-sub" id="lastScanWhen">Loading…</span>
         <span class="next-scan-inline">Next scan in <span id="agentCountdown" data-seconds="0">00:00:00</span></span>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Sources</h2></div>
+      <p class="card-sub" style="margin:0 0 .6rem">Real postings currently in the pool, by source.</p>
+      <div id="sourcesBreakdown"><p class="card-sub">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Your Match Distribution</h2></div>
+      <p class="card-sub" style="margin:0 0 .6rem">How your real matches break down by quality.</p>
+      <div id="matchDistribution"><p class="card-sub">Loading…</p></div>
     </div>
   </div>
 {% endblock %}

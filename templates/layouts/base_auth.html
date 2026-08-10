@@ -16,13 +16,11 @@
 </head>
 <body class="auth-body">
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
-  <div class="bg-orb bg-orb--1" aria-hidden="true"></div>
-  <div class="bg-orb bg-orb--2" aria-hidden="true"></div>
-  <div class="bg-orb bg-orb--3" aria-hidden="true"></div>
 
   {% block content %}{% endblock %}
 
   <script src="{{ url_for('static', path='js/background.js') }}"></script>
+  <script src="{{ url_for('static', path='js/auth-common.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

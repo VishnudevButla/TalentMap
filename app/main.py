@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api, market_trends_api
+from app.routers import registration, login, pages, activity_api, settings_api, dashboard_api, market_trends_api, oauth_google
 from app.step1_api import upload_resume_1, resume_analyze_2, routes_history
 from app.step4_agent import routes_agent
 
@@ -74,6 +74,7 @@ app.mount("/static", _RevalidateStaticFiles(directory=str(static_dir)), name="st
 # -- Register Routers --
 app.include_router(registration.router)
 app.include_router(login.router)
+app.include_router(oauth_google.router)
 app.include_router(pages.router)
 app.include_router(upload_resume_1.router, prefix="/api")
 app.include_router(resume_analyze_2.router, prefix="/api")

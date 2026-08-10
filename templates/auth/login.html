@@ -1,55 +1,124 @@
 {% extends "layouts/base_auth.html" %}
+{% from "partials/icons.html" import google_logo %}
 
 {% block title %}Login — TalentMap{% endblock %}
 {% block description %}Sign in to your TalentMap account to access your resume analysis dashboard.{% endblock %}
 
 {% block content %}
-  <div class="auth-card" role="main">
-    <div class="brand">
-      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
-      <span class="brand-name">Talent<em>Map</em></span>
-    </div>
+  <div class="auth-shell">
+    <section class="auth-marketing">
+      <div class="brand">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
+        <span class="brand-name">Talent<em>Map</em></span>
+      </div>
 
-    <h1 class="card-title">Welcome back</h1>
-    <p class="card-sub-lead">Sign in to continue to your dashboard.</p>
+      <span class="eyebrow-badge">AI-Powered Job Matching</span>
 
-    <form id="loginForm" novalidate>
-      <div id="globalError" class="global-error"></div>
+      <h1 class="marketing-headline">Welcome back.<br /><span class="accent-text">New opportunities<br />await you.</span></h1>
+      <p class="marketing-sub">Sign in to continue your journey and discover roles that truly match your skills and goals.</p>
 
-      <div class="form-group">
-        <label for="email">Email address</label>
-        <div class="input-wrap">
-          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
-          <span class="input-icon" aria-hidden="true">✉</span>
+      <div class="marketing-illustration" aria-hidden="true">
+        <span class="illo-ring illo-ring--2"></span>
+        <span class="illo-ring illo-ring--1"></span>
+        <div class="illo-glow-floor"></div>
+        <svg class="illo-icon" viewBox="0 0 24 24" width="84" height="84" stroke="none">
+          <defs>
+            <linearGradient id="planeGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" style="stop-color: var(--accent)" />
+              <stop offset="1" style="stop-color: var(--accent-2)" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#planeGrad)" d="M3 11l18-7-7 18-3-8-8-3z" />
+        </svg>
+        <span class="illo-dot illo-dot--1"></span>
+        <span class="illo-dot illo-dot--2"></span>
+      </div>
+
+      <ul class="feature-list">
+        <li>
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg></div>
+          <div>
+            <h3>Smart Matching</h3>
+            <p>Our AI analyzes your skills and experience to find the best role matches for you.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div>
+          <div>
+            <h3>Real Opportunities</h3>
+            <p>We scan real job postings from trusted sources like Adzuna and RemoteOK.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+          <div>
+            <h3>Always Updated</h3>
+            <p>Fresh matches delivered to you every 6 hours, so you never miss out.</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="marketing-footer">
+        <p class="security-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+          Your data is secure and private.<br />We never share your information.
+        </p>
+        <p class="copyright">© 2026 TalentMap. All rights reserved.</p>
+      </div>
+    </section>
+
+    <section class="auth-card-pane">
+      <div class="auth-card" role="main">
+        <div class="brand">
+          <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg></div>
+          <span class="brand-name">Talent<em>Map</em></span>
         </div>
-        <span class="error-msg" id="emailError">Please enter a valid email address.</span>
-      </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <div class="input-wrap">
-          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
-          <span class="input-icon" aria-hidden="true">🔒</span>
+        <h1 class="card-title">Welcome back</h1>
+        <p class="card-sub-lead">Sign in to continue to your dashboard.</p>
+
+        <form id="loginForm" novalidate>
+          <div id="globalError" class="global-error"></div>
+
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <div class="input-wrap">
+              <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+              <span class="input-icon" aria-hidden="true">✉</span>
+            </div>
+            <span class="error-msg" id="emailError">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap input-wrap--toggle">
+              <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+              <span class="input-icon" aria-hidden="true">🔒</span>
+              <button type="button" class="pw-toggle" data-target="password" aria-label="Show password"></button>
+            </div>
+            <span class="error-msg" id="passwordError">Password is required.</span>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember" name="remember" />
+              Remember me
+            </label>
+            <a href="#" class="link">Forgot password?</a>
+          </div>
+
+          <button type="submit" id="loginBtn" class="btn-primary">Sign In</button>
+        </form>
+
+        <div class="divider">or</div>
+
+        <a href="/api/auth/google/login" class="btn-google">{{ google_logo() }}Continue with Google</a>
+
+        <div class="card-footer">
+          Don't have an account? <a href="/register" class="link">Sign up</a>
         </div>
-        <span class="error-msg" id="passwordError">Password is required.</span>
       </div>
-
-      <div class="form-row">
-        <label class="checkbox-label">
-          <input type="checkbox" id="remember" name="remember" />
-          Remember me
-        </label>
-        <a href="#" class="link">Forgot password?</a>
-      </div>
-
-      <button type="submit" id="loginBtn" class="btn-primary">Sign In</button>
-    </form>
-
-    <div class="divider">or</div>
-
-    <div class="card-footer">
-      Don't have an account? <a href="/register" class="link">Create one</a>
-    </div>
+    </section>
   </div>
 {% endblock %}
 

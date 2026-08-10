@@ -20,7 +20,7 @@ from app.step4_agent import state as agent_state
 from app.step4_agent import scheduler as agent_scheduler
 from app.step4_agent.job_source_fetcher import SOURCES
 from app.services.market_insights import get_current_match_summary
-from app.services.market_trends_data import get_demand_skills, get_missing_skills_for_resume
+from app.services.market_trends_data import get_demand_and_missing_skills
 
 router = APIRouter()
 
@@ -35,24 +35,45 @@ async def dashboard_summary(user_id: str = Depends(get_current_user)):
     if analysis:
         analysis["_id"] = str(analysis["_id"])
         have_skills = {s.lower() for s in analysis.get("matched_skills", [])}
-        # The analysis doc always stores missing_skills=[] at analyze time
-        # (see resume_analyze_2.py) — the real, demand-ranked gap is
-        # computed here instead of left fake-empty.
-        analysis["missing_skills"] = get_missing_skills_for_resume(analysis["resume_id"])
+
+    # One combined demand-skill ranking pass (a full job_postings scan)
+    # instead of two independent ones — see get_demand_and_missing_skills()'s
+    # docstring. The analysis doc always stores missing_skills=[] at analyze
+    # time (see resume_analyze_2.py); the real, demand-ranked gap is
+    # computed here instead of left fake-empty.
+    demand_skills, missing_skills = get_demand_and_missing_skills(have_skills, demand_limit=6, missing_limit=6)
+    if analysis:
+        analysis["missing_skills"] = missing_skills
 
     matches = list(
         job_matches_collection.find({"user_id": user_id}).sort("match_score", -1).limit(6)
     )
+    # One batched $in lookup instead of one find_one() per match (was up to
+    # 6 extra round-trips per dashboard load) — projected to just the
+    # fields this list actually renders, excluding the cached
+    # component_embeddings matcher.py stores on every posting.
+    job_ids = [to_object_id(m["job_id"]) for m in matches]
+    jobs_by_id = {
+        str(j["_id"]): j
+        for j in job_postings_collection.find(
+            {"_id": {"$in": job_ids}},
+            {"title": 1, "company": 1, "company_logo_url": 1, "location": 1, "remote_type": 1, "url": 1, "skills_detected": 1, "salary_min": 1, "salary_max": 1},
+        )
+    }
     job_matches = []
     for match in matches:
-        job = job_postings_collection.find_one({"_id": to_object_id(match["job_id"])})
+        job = jobs_by_id.get(match["job_id"])
         if not job:
             continue
         job_matches.append({
+            "job_id": match["job_id"],
             "title": job.get("title"), "company": job.get("company"),
+            "company_logo_url": job.get("company_logo_url"),
             "location": job.get("location"), "remote_type": job.get("remote_type"),
             "match_score": match["match_score"], "status": match["status"],
-            "url": job.get("url"),
+            "url": job.get("url"), "skills_detected": job.get("skills_detected", []),
+            "salary_min": job.get("salary_min"), "salary_max": job.get("salary_max"),
+            "saved": match.get("saved", False),
         })
 
     # Scan schedule/stats are global now — one shared 6-hour cycle for every
@@ -82,8 +103,20 @@ async def dashboard_summary(user_id: str = Depends(get_current_user)):
         "user_id": user_id, "created_at": {"$gte": today_start},
     })
 
+    # Real skills coverage — matched vs. the matched+missing pool this same
+    # request already computed above (get_demand_and_missing_skills), not a
+    # separately-invented ratio.
+    skills_coverage_pct = None
+    total_skill_signal = len(have_skills) + len(missing_skills)
+    if total_skill_signal:
+        skills_coverage_pct = round(len(have_skills) / total_skill_signal * 100)
+
+    month_start = today_start.replace(day=1)
+    applied_this_month = job_matches_collection.count_documents({
+        "user_id": user_id, "applied": True, "applied_at": {"$gte": month_start},
+    })
+
     match = get_current_match_summary(user_id)
-    demand_skills = get_demand_skills(have_skills, limit=6)
 
     return {
         "analysis": analysis,
@@ -101,4 +134,6 @@ async def dashboard_summary(user_id: str = Depends(get_current_user)):
         "activity": activity,
         "ai_jobs_found_today": ai_jobs_found_today,
         "jobs_since_last_scan": jobs_since_last_scan,
+        "skills_coverage_pct": skills_coverage_pct,
+        "applied_this_month": applied_this_month,
     }

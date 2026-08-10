@@ -4,6 +4,8 @@
 {% block title %}New analysis — TalentMap{% endblock %}
 
 {% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/upload.css') }}" />
 {% endblock %}
 
@@ -15,6 +17,10 @@
         <div class="identity-meta"><span class="chip">Upload your resume — skills, experience, and match scores are picked up automatically by the AI Job Agent</span></div>
       </div>
     </div>
+    <button type="button" class="btn-ghost" id="howItWorksBtn" style="display:inline-flex;align-items:center;gap:.4rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      How it works
+    </button>
   </div>
 
   <div class="upload-grid">
@@ -37,13 +43,113 @@
     </div>
 
     <div class="card">
-      <h2 style="margin-bottom:1.1rem">Analysis pipeline</h2>
-      <div class="pipeline">
-        <div class="pipe-step"><div class="pipe-dot">1</div><div class="pipe-text"><h4>PDF parsing</h4><p>Extracts raw text, name, and section boundaries.</p></div></div>
-        <div class="pipe-step"><div class="pipe-dot">2</div><div class="pipe-text"><h4>NLP &amp; entity extraction</h4><p>Gemini pulls skills, education, employers, and experience.</p></div></div>
-        <div class="pipe-step"><div class="pipe-dot">3</div><div class="pipe-text"><h4>AI Job Agent matching</h4><p>Your resume is embedded and compared against real, live job postings via cosine similarity.</p></div></div>
-        <div class="pipe-step"><div class="pipe-dot">4</div><div class="pipe-text"><h4>Role &amp; salary insight</h4><p>Derived from your highest-ranked real job matches — not a prediction model.</p></div></div>
-        <div class="pipe-step"><div class="pipe-dot">5</div><div class="pipe-text"><h4>Dashboard ready</h4><p>Results, gaps, and job-fit odds land on your dashboard.</p></div></div>
+      <h2>Analysis pipeline</h2>
+      <p class="card-sub" style="margin:0 0 1.1rem">See how your resume is analyzed by the AI Job Agent.</p>
+      <!--
+        Real progress, not a canned animation — every state transition
+        below is set by static/js/upload.js from an actual fetch result,
+        never a timer. Steps 1-2 happen inside one atomic server request
+        (POST /api/analyze) with no observable boundary between them, so
+        they transition together, honestly, rather than faking
+        independent timing. Step 3 (matching) starts as a background task
+        the instant that request returns (see resume_analyze_2.py) and
+        is deliberately never marked "Done" here — this page can't
+        observe its real completion, only the dashboard can (it polls
+        for the actual result). Steps 4-5 aren't independently-trackable
+        backend steps at all — they're outcomes of step 3 finishing, so
+        they stay "Pending" on this page rather than fake a signal that
+        doesn't exist here; see the note below the list.
+      -->
+      <div class="pipeline pipeline-rich" id="pipeline">
+        <div class="pipe-step" data-step="parse" data-state="pending">
+          <div class="pipe-dot"><span class="pipe-dot-num">1</span></div>
+          <div class="pipe-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div class="pipe-text"><h4>PDF parsing</h4><p>Extract raw text, name, and section boundaries.</p></div>
+          <span class="pipe-status-pill" data-status-for="parse">Pending</span>
+        </div>
+        <div class="pipe-step" data-step="extract" data-state="pending">
+          <div class="pipe-dot"><span class="pipe-dot-num">2</span></div>
+          <div class="pipe-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2a5.5 5.5 0 00-3.9 9.4A5.5 5.5 0 009.5 21a5.5 5.5 0 003.9-9.4A5.5 5.5 0 009.5 2z"/><path d="M14.5 6.5a5.5 5.5 0 013.9 9.4"/></svg>
+          </div>
+          <div class="pipe-text"><h4>NLP &amp; entity extraction</h4><p>Extract skills, education, employers, and experience.</p></div>
+          <span class="pipe-status-pill" data-status-for="extract">Pending</span>
+        </div>
+        <div class="pipe-step" data-step="matching" data-state="pending">
+          <div class="pipe-dot"><span class="pipe-dot-num">3</span></div>
+          <div class="pipe-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg>
+          </div>
+          <div class="pipe-text"><h4>AI Job Agent matching</h4><p>Compared against live job postings using semantic similarity — runs in the background so this page doesn't have to wait; continues after you leave, real scores land on your dashboard as soon as it's done.</p></div>
+          <span class="pipe-status-pill" data-status-for="matching">Pending</span>
+        </div>
+        <div class="pipe-step" data-step="insight" data-state="pending">
+          <div class="pipe-dot"><span class="pipe-dot-num">4</span></div>
+          <div class="pipe-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
+          </div>
+          <div class="pipe-text"><h4>Role &amp; salary insight</h4><p>Derived from your top matching job postings, once matching finishes.</p></div>
+          <span class="pipe-status-pill" data-status-for="insight">Pending</span>
+        </div>
+        <div class="pipe-step" data-step="dashboard" data-state="pending">
+          <div class="pipe-dot"><span class="pipe-dot-num">5</span></div>
+          <div class="pipe-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          </div>
+          <div class="pipe-text"><h4>Dashboard ready</h4><p>Results, gaps, and job-fit insights appear on your dashboard.</p></div>
+          <span class="pipe-status-pill" data-status-for="dashboard">Pending</span>
+        </div>
+      </div>
+      <p class="card-sub pipeline-note">Steps 4-5 happen automatically once matching finishes, on your own schedule — not something this page can watch complete, so they stay "Pending" here. Check your dashboard afterward for the real result.</p>
+    </div>
+  </div>
+
+  <div class="card" id="extractedInfoCard" hidden>
+    <div class="card-head">
+      <div>
+        <h2>Extracted Information (NER)</h2>
+        <p class="card-sub" style="margin:.2rem 0 0">Real data pulled from the resume you just analyzed — not a preview.</p>
+      </div>
+      <button type="button" class="btn-primary btn-sm" id="goToDashboardBtn" hidden>Go to Dashboard →</button>
+    </div>
+    <div class="ner-tabs" id="uploadNerTabs">
+      <button type="button" class="ner-tab is-active" data-tab="skills">Skills</button>
+      <button type="button" class="ner-tab" data-tab="experience">Experience</button>
+      <button type="button" class="ner-tab" data-tab="education">Education</button>
+      <button type="button" class="ner-tab" data-tab="projects">Projects</button>
+      <button type="button" class="ner-tab" data-tab="certifications">Certifications</button>
+    </div>
+    <div class="extracted-info-body">
+      <div id="uploadNerTabContent" class="ner-tab-content"></div>
+      <div class="smart-extraction-note">
+        <div class="smart-extraction-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/></svg>
+        </div>
+        <h4>Smart Extraction</h4>
+        <p>Real skills, education, experience, projects, and certifications — extracted from the resume you just uploaded, not a template.</p>
+        <p class="smart-extraction-footnote">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          You can review all extracted data here, or on your Resume History page any time.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="howItWorksModal" hidden>
+    <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
+      <h3 id="howItWorksTitle">How resume analysis works</h3>
+      <p class="card-sub" style="margin:.3rem 0 1.1rem">The same 5 real steps shown in the pipeline card, explained.</p>
+      <ol class="how-it-works-list">
+        <li><b>PDF parsing</b> — your file is downloaded from secure storage and its raw text extracted.</li>
+        <li><b>NLP &amp; entity extraction</b> — an LLM reads that text and pulls out skills, education, experience, projects, and certifications — nothing invented, only what's actually in your resume.</li>
+        <li><b>AI Job Agent matching</b> — your resume is compared against real job postings already in the pool using embedding similarity, not keyword matching.</li>
+        <li><b>Role &amp; salary insight</b> — once matching has real results, your best-fit roles and salary context are derived directly from those matches.</li>
+        <li><b>Dashboard ready</b> — everything above lands on your dashboard, kept up to date as the AI Job Agent keeps scanning.</li>
+      </ol>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" id="howItWorksCloseBtn">Got it</button>
       </div>
     </div>
   </div>

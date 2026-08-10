@@ -19,8 +19,13 @@ lock's renewal heartbeat so GET /api/agent/status and the dashboard can
 show real process-alive state instead of just a countdown.
 
 start_scheduler() wires three jobs onto an APScheduler AsyncIOScheduler:
-  - "global_scan_cycle" (interval): fetch once, then match every registered user.
-  - "daily_digest" (cron): once/day, top matches emailed to every registered user.
+  - "global_scan_cycle" (interval): fetch once, then match every registered
+    user — and, for users with email_frequency="immediate" (Settings page),
+    email them right there via _maybe_send_immediate_email().
+  - "daily_digest" (cron): once/day, real per-user Settings
+    (email_alerts_enabled, email_frequency, match_threshold — see
+    app/services/settings_data.py) decide who actually gets emailed and
+    with what cutoff; not an unconditional blast to every user.
   - "scheduler_lock_renew" (interval): keeps this process's claim on the
     single-instance lock alive (see _try_acquire_scheduler_lock below).
 """
@@ -29,7 +34,7 @@ import asyncio
 import logging
 import socket
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 from app.core.db import (
@@ -37,8 +42,8 @@ from app.core.db import (
     job_postings_collection,
     job_matches_collection,
     user_collection,
-    agent_state_collection,
     scheduler_locks_collection,
+    to_object_id,
 )
 from app.config import settings
 from app.step4_agent import state as agent_state
@@ -46,8 +51,41 @@ from app.step4_agent.job_source_fetcher import run_job_fetch_cycle
 from app.step4_agent.matcher import run_matching_for_user
 from app.step4_agent.email_alerts import send_match_alert_email, MAX_DIGEST_MATCHES
 from app.services.activity_log import log_activity
+from app.services.settings_data import get_user_notification_prefs
 
 logger = logging.getLogger(__name__)
+
+
+def _maybe_send_immediate_email(user_id: str, new_matches: list) -> None:
+    """
+    "immediate" email_frequency means "as soon as a scan finds something,"
+    not "the daily digest" — this is that path, called from run_scan_cycle
+    right after real matches are found, using the same email template and
+    provider chain as the daily digest (send_match_alert_email). Users on
+    "daily"/"weekly"/"never" are handled by send_daily_digest instead, so
+    this is a no-op for them — nobody gets emailed twice for one match.
+    """
+    if not new_matches:
+        return
+
+    prefs = get_user_notification_prefs(user_id)
+    if not prefs["email_alerts_enabled"] or prefs["email_frequency"] != "immediate":
+        return
+
+    qualifying = sorted(
+        (m for m in new_matches if m["match_score"] >= prefs["match_threshold"]),
+        key=lambda m: m["match_score"], reverse=True,
+    )
+    if not qualifying:
+        return
+
+    user_doc = user_collection.find_one({"_id": to_object_id(user_id)})
+    to_email = user_doc.get("email") if user_doc else None
+    if not to_email:
+        return
+
+    if send_match_alert_email(to_email, qualifying):
+        agent_state.record_digest_sent(user_id)
 
 
 async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
@@ -76,6 +114,14 @@ async def run_scan_cycle(user_id: str) -> Dict[str, Any]:
             icon="briefcase",
             meta={"jobs_scanned": jobs_in_pool, "new_matches": len(new_matches)},
         )
+
+        try:
+            _maybe_send_immediate_email(user_id, new_matches)
+        except Exception:
+            # An email failure shouldn't fail the whole scan cycle for
+            # this user — the next cycle (or the daily digest, if they
+            # switch frequency) will pick up any matches this missed.
+            logger.exception("Immediate email send failed: user_id=%s", user_id)
 
         logger.info(
             "Scheduler execution completed: user_id=%s jobs_in_pool=%d new_matches=%d",
@@ -137,12 +183,26 @@ async def run_global_scan_cycle() -> Dict[str, Any]:
     return {"fetch": fetch_summary, "users_scanned": len(user_ids), "total_new_matches": total_new_matches}
 
 
+_WEEKLY_DIGEST_MIN_GAP = timedelta(days=7)
+
+
 async def send_daily_digest() -> None:
     """
-    The cron job: once/day, emails every registered user their top matches
-    (score >= 70 only — a low match is not worth interrupting someone's day
-    for). Skips users with no email on file or no qualifying matches — no
-    per-user opt-in/opt-out toggle, the digest is global like the scan.
+    The cron job: runs once/day, but doesn't unconditionally email every
+    user — each user's real Settings preferences (app/routers/settings_api.py,
+    stored in user_settings_collection) actually gate this now:
+      - email_alerts_enabled=False → skipped entirely.
+      - email_frequency="never"    → skipped entirely.
+      - email_frequency="immediate" → skipped here — handled instantly by
+        _maybe_send_immediate_email() inside run_scan_cycle instead, so
+        they're never emailed twice for the same match.
+      - email_frequency="daily"   → sent every run (this cron already only
+        fires once/day, at settings.email_digest_hour UTC).
+      - email_frequency="weekly"  → only sent if _WEEKLY_DIGEST_MIN_GAP has
+        actually elapsed since agent_state's last_digest_sent_at.
+    match_threshold (also per-user, default 70) replaces what used to be a
+    hardcoded status filter — "worth emailing about" is now whatever score
+    each user actually configured, not a fixed cutoff for everyone.
     """
     logger.info("Daily digest job started")
     sent = 0
@@ -156,9 +216,18 @@ async def send_daily_digest() -> None:
         if not to_email:
             continue
 
+        prefs = get_user_notification_prefs(user_id)
+        if not prefs["email_alerts_enabled"] or prefs["email_frequency"] in ("never", "immediate"):
+            continue
+
+        if prefs["email_frequency"] == "weekly":
+            last_sent = agent_state.ensure_agent_state(user_id).get("last_digest_sent_at")
+            if last_sent and (datetime.utcnow() - last_sent) < _WEEKLY_DIGEST_MIN_GAP:
+                continue
+
         top_matches = list(
             job_matches_collection.find(
-                {"user_id": user_id, "status": {"$in": ["excellent", "good"]}}
+                {"user_id": user_id, "match_score": {"$gte": prefs["match_threshold"]}}
             ).sort("match_score", -1).limit(MAX_DIGEST_MATCHES)
         )
         if not top_matches:
@@ -166,9 +235,7 @@ async def send_daily_digest() -> None:
 
         if send_match_alert_email(to_email, top_matches):
             sent += 1
-            agent_state_collection.update_one(
-                {"user_id": user_id}, {"$inc": {"emails_sent_today": 1}}
-            )
+            agent_state.record_digest_sent(user_id)
 
     logger.info("Daily digest job completed: emails_sent=%d", sent)
 
@@ -203,9 +270,20 @@ def _try_acquire_scheduler_lock() -> bool:
 
 
 def _renew_scheduler_lock() -> None:
+    # upsert=True matters: without it, a renewal that lands after the lock
+    # doc has already been deleted (TTL expiry from a single missed
+    # renewal — e.g. a scan cycle's synchronous matching call blocking the
+    # event loop past APScheduler's default 1s misfire grace) silently
+    # matches zero documents forever after. update_one() doesn't raise on
+    # that, so every future renewal keeps logging "executed successfully"
+    # while doing nothing — get_worker_health() then reports "down"
+    # permanently even though this process is alive and working correctly.
+    # Caught only by comparing worker.py's own logs against a direct query
+    # of scheduler_locks_collection, not by reading this function alone.
     scheduler_locks_collection.update_one(
         {"_id": _LOCK_ID, "holder": _INSTANCE_ID},
         {"$set": {"claimed_at": datetime.utcnow()}},
+        upsert=True,
     )
 
 

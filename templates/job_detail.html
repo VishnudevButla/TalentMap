@@ -1,0 +1,83 @@
+{% extends "layouts/base_app.html" %}
+
+{% block title %}Job details — TalentMap{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/job-detail.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="topbar">
+    <a href="/matches" class="back-link">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to matches
+    </a>
+    <div class="dash-topbar-actions">
+      <button type="button" class="btn-ghost" id="jdShareBtn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+        Share
+      </button>
+      <button type="button" class="btn-icon-only" id="jdSaveBtn" aria-label="Bookmark this job">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      </button>
+      <a href="#" target="_blank" rel="noopener" class="btn-primary" id="jdApplyBtn" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
+        Apply Now
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="jdLoading" class="card"><p class="card-sub">Loading job details…</p></div>
+  <div id="jdError" class="card is-hidden"><p class="card-sub" id="jdErrorMsg"></p></div>
+
+  <div id="jdContent" class="jd-layout is-hidden">
+    <div class="jd-main">
+      <div class="card">
+        <div class="jd-head">
+          <div id="jdLogo" class="jd-logo"></div>
+          <div class="jd-head-body">
+            <div class="jd-badges">
+              <span class="stat-status" id="jdMatchBadge"></span>
+              <span class="best-match-badge is-hidden" id="jdBestBadge">🔒 Best Match</span>
+              <span class="jd-applied-badge is-hidden" id="jdAppliedBadge">✓ Applied</span>
+            </div>
+            <h1 id="jdTitle"></h1>
+            <p class="jd-company" id="jdCompany"></p>
+            <p class="jd-meta" id="jdMeta"></p>
+            <div class="jd-chips" id="jdChips"></div>
+          </div>
+        </div>
+
+        <div class="ner-tabs" id="jdTabs">
+          <button type="button" class="ner-tab is-active" data-tab="overview">Overview</button>
+          <button type="button" class="ner-tab" data-tab="why">Why it's a match</button>
+          <button type="button" class="ner-tab" data-tab="requirements">Requirements match</button>
+        </div>
+        <div id="jdTabContent" class="jd-tab-content"></div>
+      </div>
+    </div>
+
+    <div class="dash-rail">
+      <div class="card">
+        <h2>Match score analytics</h2>
+        <div id="jdRadar" class="jd-radar"></div>
+      </div>
+
+      <div class="card" id="jdSimilarCard">
+        <div class="card-head"><h2>Similar jobs you might like</h2><a class="see-all" href="/matches">View all →</a></div>
+        <div id="jdSimilarList"></div>
+      </div>
+
+      <div class="card" id="jdActivityCard">
+        <h2>Activity on this job</h2>
+        <div id="jdActivityList" class="jd-activity-list"></div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', path='js/job-detail.js') }}"></script>
+{% endblock %}

@@ -29,7 +29,12 @@ _MAX_WINDOW_DAYS = 15
 # ---------------------------------------------------------------------------
 
 def _rank_demand_skills(have_skills: Set[str]) -> Tuple[List[Dict[str, Any]], int]:
-    postings = list(job_postings_collection.find({}))
+    # Projected to skills_detected only — job_postings documents also carry
+    # cached component_embeddings (matcher.py, ~40KB/doc across 4 vectors)
+    # that this function never touches; fetching them here was pulling the
+    # entire pool's embeddings over the network on every dashboard/market
+    # trends load for no reason (measured ~18MB for 450 postings).
+    postings = list(job_postings_collection.find({}, {"skills_detected": 1}))
     if not postings:
         return [], 0
 
@@ -79,6 +84,27 @@ def get_missing_skills_for_resume(resume_id: str, limit: int = 6) -> List[Dict[s
 
     missing = [s for s in demand_skills if not s["have"]]
     return [{"name": s["name"], "demand": _demand_tier(s["score"])} for s in missing[:limit]]
+
+
+def get_demand_and_missing_skills(
+    have_skills: Set[str], demand_limit: int = 6, missing_limit: int = 6
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+    """
+    Combined variant for callers (dashboard_api.py) that need both the
+    demand-ranked skill list AND this resume's missing-skill gap in the
+    same request — computes _rank_demand_skills() (a full
+    job_postings_collection scan) exactly once and derives both outputs
+    from it, instead of calling get_demand_skills() and
+    get_missing_skills_for_resume() separately, which each ran that same
+    scan independently.
+    """
+    demand_skills, total = _rank_demand_skills(have_skills)
+    if total == 0:
+        return [], []
+
+    missing = [s for s in demand_skills if not s["have"]]
+    missing_skills = [{"name": s["name"], "demand": _demand_tier(s["score"])} for s in missing[:missing_limit]]
+    return demand_skills[:demand_limit], missing_skills
 
 
 # ---------------------------------------------------------------------------
@@ -213,12 +239,20 @@ def get_career_paths(user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
     matches = list(
         job_matches_collection.find({"user_id": user_id}).sort("match_score", -1)
     )
+    # One batched lookup instead of one find_one() per match — same fix as
+    # dashboard_api.py and routes_agent.py below. Title-only projection:
+    # this only ever reads job.get("title").
+    job_ids = list({to_object_id(m["job_id"]) for m in matches})
+    titles_by_id = {
+        str(j["_id"]): j.get("title")
+        for j in job_postings_collection.find({"_id": {"$in": job_ids}}, {"title": 1})
+    }
+
     seen: Dict[str, int] = {}
     for match in matches:
         if len(seen) >= limit:
             break
-        job = job_postings_collection.find_one({"_id": to_object_id(match["job_id"])})
-        title = job.get("title") if job else None
+        title = titles_by_id.get(match["job_id"])
         if not title or title in seen:
             continue
         seen[title] = match["match_score"]
@@ -246,7 +280,9 @@ def _insights(
 # ---------------------------------------------------------------------------
 
 def get_market_trends_context(user_id: str) -> Dict[str, Any]:
-    postings = list(job_postings_collection.find({}))
+    # Only title/posted_at/fetched_at are read below (_role_demand_and_momentum,
+    # updated_at) — same reasoning as _rank_demand_skills' projection above.
+    postings = list(job_postings_collection.find({}, {"title": 1, "posted_at": 1, "fetched_at": 1}))
 
     latest_analyses = list(
         analysis_collection.find({"user_id": user_id}).sort("analyzed_at", -1).limit(1)

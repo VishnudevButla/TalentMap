@@ -23,5 +23,9 @@ def log_activity(user_id: str, type: str, message: str, icon: str = "info", meta
         "icon": icon,
         "created_at": datetime.utcnow(),
         "meta": meta or {},
+        # Set once at write time so new activity is honestly "unread" by
+        # default — app/routers/activity_api.py's mark-as-read endpoint is
+        # the only thing that ever flips it.
+        "read": False,
     })
     logger.debug("Activity logged: user_id=%s type=%s", user_id, type)

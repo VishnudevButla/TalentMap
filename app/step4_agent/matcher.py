@@ -29,6 +29,7 @@ import numpy as np
 
 from app.core.db import analysis_collection, job_postings_collection, job_matches_collection
 from app.services.activity_log import log_activity
+from app.services.settings_data import get_user_notification_prefs
 from app.step2_nlp.embeddings_4 import embed_components, calculate_weighted_component_similarity, DEFAULT_WEIGHTS
 
 logger = logging.getLogger(__name__)
@@ -123,6 +124,9 @@ def run_matching_for_user(user_id: str, since: Optional[datetime] = None) -> Lis
 
     latest_analysis = latest[0]
     resume_components = embed_components(latest_analysis.get("entities", {}))
+    # This user's real threshold for "worth an activity-log entry" (Settings
+    # page) — one read here, not per-job, since it can't change mid-loop.
+    match_threshold = get_user_notification_prefs(user_id)["match_threshold"]
 
     query = {"created_at": {"$gt": since}} if since else {}
     postings = list(job_postings_collection.find(query))
@@ -167,7 +171,7 @@ def run_matching_for_user(user_id: str, since: Optional[datetime] = None) -> Lis
         )
         new_matches.append(match_doc)
 
-        if result["score"] >= 70:
+        if result["score"] >= match_threshold:
             log_activity(
                 user_id=user_id,
                 type="job_match",

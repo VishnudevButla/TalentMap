@@ -4,70 +4,90 @@
 {% block title %}Dashboard — TalentMap{% endblock %}
 
 {% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
 {% endblock %}
 
 {% block content %}
-  <div class="topbar">
-    <div class="identity">
-      <div class="avatar" id="candidateInitials">?</div>
-      <div>
-        <h1 id="candidateName">Loading…</h1>
-        <div class="identity-meta">
-          <span class="chip mono">{{ file() }}No resume analyzed yet</span>
-          <span class="chip">Not analyzed yet</span>
-        </div>
-      </div>
+  <div class="topbar dash-topbar">
+    <div>
+      <h1 id="dashGreeting">Good afternoon,</h1>
+      <p class="dash-greeting-sub" id="dashGreetingSub">Loading your dashboard…</p>
     </div>
-    <div style="display:flex;align-items:center;gap:.9rem">
-      <div style="text-align:right">
-        <button class="btn-refresh" id="refreshDashboardBtn" type="button" aria-label="Refresh dashboard data">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          <span id="refreshDashboardLabel">Refresh</span>
-        </button>
-        <p class="dashboard-last-updated" id="dashboardLastUpdated"></p>
-      </div>
-      <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+    <div class="dash-search-wrap">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="dashSearch" placeholder="Search roles, companies, or skills…" autocomplete="off" />
+    </div>
+    <div class="dash-topbar-actions">
+      <a href="/activity" class="btn-icon-only" id="dashNotifBell" aria-label="Activity">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="dash-notif-dot is-hidden" id="dashNotifDot"></span>
+      </a>
+      <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+        New analysis
+      </a>
     </div>
   </div>
 
-  <div class="stat-row">
-    <div class="card">
-      <div class="card-head"><span class="stat-label">Match score</span><span class="stat-status" id="matchStatus"></span></div>
-      <div class="ring-wrap">
-        <div class="ring" data-pct="0" style="--ring-color:var(--warn)">
-          <span class="ring-value">0%</span>
-        </div>
-        <div class="ring-note"><p>Loading your match data…</p></div>
-      </div>
+  <div class="stat-row stat-row-4">
+    <div class="card stat-card">
+      <span class="stat-label">Top match score</span>
+      <div class="stat-figure" id="statTopMatch">—</div>
+      <p class="stat-caption" id="statTopMatchCaption">No matches yet</p>
     </div>
-
-    <div class="card">
-      <span class="stat-label">AI jobs found today</span>
-      <div class="stat-figure" id="aiJobsFoundToday">—</div>
-      <p class="stat-caption">High match opportunities</p>
-      <p class="stat-caption stat-caption-good" id="aiJobsFoundDelta"></p>
+    <div class="card stat-card">
+      <span class="stat-label">New matches</span>
+      <div class="stat-figure" id="statNewMatches">—</div>
+      <p class="stat-caption" id="statNewMatchesCaption"></p>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-label">Skills coverage</span>
+      <div class="stat-figure" id="statSkillsCoverage">—</div>
+      <p class="stat-caption">Market aligned</p>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-label">Applied this month</span>
+      <div class="stat-figure" id="statAppliedMonth">—</div>
+      <p class="stat-caption">Keep going!</p>
     </div>
   </div>
 
-  <div class="jobs-grid">
-    <div class="card">
-      <div class="card-head">
-        <h2>Top job matches for you</h2>
-        <a class="see-all" href="/matches">View all matches →</a>
+  <div class="dash-layout">
+    <div class="dash-main">
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-head-icon-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/></svg>
+            AI Recommended for you
+          </h2>
+          <a class="see-all" href="/matches">View all matches →</a>
+        </div>
+        <div class="reco-row" id="recoRow">
+          <p class="card-sub">Loading recommendations…</p>
+        </div>
       </div>
-      <div class="filter-pills" id="jobFilterPills">
-        <span class="pill is-active" data-filter="all">All</span>
-        <span class="pill" data-filter="excellent">Excellent</span>
-        <span class="pill" data-filter="good">Good</span>
-        <span class="pill" data-filter="remote">Remote</span>
-      </div>
-      <div class="job-list" id="jobList">
-        <p class="card-sub">Loading matches…</p>
+
+      <div class="card" style="margin-top:1.1rem">
+        <div class="card-head"><h2>Your skills landscape</h2></div>
+        <div class="landscape-grid">
+          <div class="landscape-col">
+            <h4 class="landscape-label landscape-label-good">Strong skills</h4>
+            <p class="card-sub" style="margin:0 0 .7rem">Based on your resume</p>
+            <div class="chips" id="strongSkillsChips"><p class="card-sub">Loading…</p></div>
+          </div>
+          <div id="landscapeDonut" class="landscape-donut"></div>
+          <div class="landscape-col">
+            <h4 class="landscape-label landscape-label-crit">Skills to grow</h4>
+            <p class="card-sub" style="margin:0 0 .7rem">High impact for better matches</p>
+            <div class="chips" id="growSkillsChips"><p class="card-sub">Loading…</p></div>
+            <a href="/market-trends" class="see-all landscape-explore">+ Explore more</a>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="col-stack">
+    <div class="dash-rail">
       <div class="card">
         <div class="card-head">
           <h2>AI Job Agent</h2>
@@ -92,38 +112,10 @@
       </div>
     </div>
   </div>
-
-  <div class="body-grid">
-    <div class="card">
-      <div class="card-head"><h2>Skill match breakdown</h2><a class="see-all" href="#">Export report</a></div>
-
-      <div class="skill-section">
-        <div class="skill-section-head"><span class="dot good"></span><h3>Matched skills</h3><span class="count" id="matchedSkillsCount">—</span></div>
-        <div class="chips" id="matchedSkillsChips">
-          <p class="card-sub">Loading…</p>
-        </div>
-      </div>
-
-      <div class="skill-section">
-        <div class="skill-section-head"><span class="dot crit"></span><h3>Missing — recommended to learn</h3><span class="count" id="missingSkillsCount">—</span></div>
-        <div class="chips" id="missingSkillsChips">
-          <p class="card-sub">Loading…</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h2>Skill demand in market</h2><span class="card-sub" style="margin:0">This week</span></div>
-      <div id="demandSkillsList">
-        <p class="card-sub">Loading…</p>
-      </div>
-    </div>
-  </div>
 {% endblock %}
 
 {% block extra_js %}
   <script src="{{ url_for('static', path='js/agent-countdown.js') }}"></script>
-  <script src="{{ url_for('static', path='js/job-filters.js') }}"></script>
   <script src="{{ url_for('static', path='js/activity.js') }}"></script>
   <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -10,14 +10,29 @@
   <div class="topbar">
     <div>
       <h1>Activity</h1>
-      <p class="card-sub">Everything TalentMap has done on your behalf.</p>
+      <p class="card-sub">Everything TalentMap has done on your behalf. Click an entry to jump to it.</p>
     </div>
+    <button type="button" class="btn-ghost btn-sm" id="clearAllActivityBtn">Clear all</button>
   </div>
 
   <div class="card">
     <div id="activityFeed" class="activity-feed">
       <div class="empty-state">
         <p>Loading activity…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="clearActivityModal" hidden>
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="clearActivityModalTitle" aria-describedby="clearActivityModalDesc">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+      <h3 id="clearActivityModalTitle">Clear all activity?</h3>
+      <p id="clearActivityModalDesc" class="card-sub">This removes your entire activity history permanently — this can't be undone.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="clearActivityCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary" id="clearActivityConfirmBtn" style="background:var(--crit);box-shadow:none">Clear all</button>
       </div>
     </div>
   </div>

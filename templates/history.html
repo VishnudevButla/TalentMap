@@ -1,6 +1,7 @@
 {% extends "layouts/base_app.html" %}
+{% from "partials/icons.html" import file, upload, plus, external_link %}
 
-{% block title %}Resume History — TalentMap{% endblock %}
+{% block title %}Your Resumes — TalentMap{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}" />
@@ -10,16 +11,70 @@
 {% block content %}
   <div class="topbar">
     <div>
-      <h1>Resume History</h1>
-      <p class="card-sub">Every analysis you've run, most recent first.</p>
+      <h1>Your Resumes</h1>
+      <p class="card-sub">Manage your resumes and track your progress over time.</p>
     </div>
-    <a href="/new-analysis" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">New analysis</a>
+    <div>
+      <input type="file" id="resumeFileInput" accept="application/pdf" hidden />
+      <button type="button" class="btn-primary" id="uploadResumeBtn" style="display:inline-flex;align-items:center;gap:.4rem">
+        {{ plus() }} Upload New Resume
+      </button>
+    </div>
+  </div>
+
+  <div class="resume-stats-row" id="resumeStatsRow">
+    <div class="card resume-stat"><p class="card-sub">Loading…</p></div>
+  </div>
+
+  <div class="card" id="currentResumeSection" style="display:none">
+    <div class="card-head"><h2>Current Resume</h2></div>
+    <div id="currentResumeCard"></div>
   </div>
 
   <div class="card">
+    <div class="card-head">
+      <h2>Resume History</h2>
+      <select class="agent-select" id="historySortSelect">
+        <option value="newest">Sort by: Newest first</option>
+        <option value="oldest">Sort by: Oldest first</option>
+        <option value="score">Sort by: Best score</option>
+      </select>
+    </div>
     <div id="historyList" class="history-list">
       <div class="empty-state">
         <p>Loading your history…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="extractedInfoPanel" hidden>
+    <div class="card-head">
+      <h2>Extracted Information — <span id="extractedInfoFilename"></span></h2>
+      <button type="button" class="btn-ghost btn-sm" id="extractedInfoCloseBtn">Close</button>
+    </div>
+    <div class="ner-tabs" id="nerTabs">
+      <button type="button" class="ner-tab is-active" data-tab="skills">Skills</button>
+      <button type="button" class="ner-tab" data-tab="experience">Experience</button>
+      <button type="button" class="ner-tab" data-tab="education">Education</button>
+      <button type="button" class="ner-tab" data-tab="projects">Projects</button>
+      <button type="button" class="ner-tab" data-tab="certifications">Certifications</button>
+    </div>
+    <div class="extracted-info-body">
+      <div id="nerTabContent" class="ner-tab-content"></div>
+      <div class="skill-summary-panel" id="skillSummaryPanel"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="deleteResumeModal" hidden>
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="deleteResumeModalTitle" aria-describedby="deleteResumeModalDesc">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+      <h3 id="deleteResumeModalTitle">Delete this resume?</h3>
+      <p id="deleteResumeModalDesc" class="card-sub">This removes the file and its analysis permanently — this can't be undone.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="deleteResumeCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary" id="deleteResumeConfirmBtn" style="background:var(--crit);box-shadow:none">Delete</button>
       </div>
     </div>
   </div>
