@@ -47,10 +47,13 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# Media and static files (generated)
+# Media and generated files
+# NOTE: /static/ is intentionally NOT ignored here — in this FastAPI app,
+# static/ is real source code (css/js), not a build output. An earlier,
+# generic Django-template line ignored it by mistake, which meant every
+# stylesheet and script had silently never been committed to this repo.
 /media/
 /staticfiles/
-/static/
 
 # Django secret key / environment variables
 .env

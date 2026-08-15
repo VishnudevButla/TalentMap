@@ -1,0 +1,110 @@
+/*
+  market_trends.css — page-specific styles for the Market Trends page.
+  Reuses dashboard.css atoms (.card, .stat-row, .demand-row, .stat-status,
+  .chip, .job-logo pattern) and history.css's .skill-donut wherever the
+  shape already matches; everything below is specific to this page.
+*/
+
+/* ── Market fit stat tile ── */
+.mt-fit-row { display: flex; align-items: baseline; gap: .8rem; margin-top: .6rem; }
+.mt-fit-score { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; }
+
+/* ── AI Job Agent stat tile ── */
+.mt-agent-countdown { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: .6rem; }
+
+/* ── Insights + Opportunity skills (left) / Skill demand (right) row ── */
+.mt-insight-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.1rem; align-items: start; margin-bottom: 1.1rem; }
+.mt-insight-col { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+.mt-demand-card { min-width: 0; }
+
+/* ── Market insights callouts ── */
+.mt-insights { display: flex; flex-direction: column; gap: .7rem; }
+.mt-insight-item {
+  display: flex; align-items: flex-start; gap: .75rem; padding: .9rem .95rem;
+  border-radius: var(--radius-md); background: var(--bg-2);
+}
+.mt-insight-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.mt-insight-icon svg { width: 17px; height: 17px; }
+.mt-insight-icon-flame { background: var(--crit-tint); color: var(--crit); }
+.mt-insight-icon-alert { background: var(--warn-tint); color: var(--warn); }
+.mt-insight-item > div:last-child { font-size: .84rem; color: var(--ink-0); line-height: 1.4; }
+.mt-insight-item > div:last-child b { font-weight: 700; }
+.mt-insight-item > div:last-child span { display: block; font-size: .74rem; color: var(--ink-2); margin-top: .2rem; font-weight: 400; }
+
+/* ── Opportunity skills: donut + legend ── */
+.mt-opp-wrap { padding-top: .2rem; }
+.mt-opp-layout { display: flex; align-items: center; gap: 1.3rem; }
+.mt-opp-donut-wrap { flex-shrink: 0; }
+.mt-opp-donut-wrap .skill-donut { width: 108px; height: 108px; }
+.mt-opp-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .55rem; }
+.mt-opp-legend-row { display: flex; align-items: center; gap: .55rem; }
+.mt-opp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mt-opp-name { flex: 1; min-width: 0; font-size: .82rem; font-weight: 600; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mt-demand-tag {
+  font-size: .64rem; font-weight: 700; padding: .16rem .5rem; border-radius: 99px; text-transform: uppercase; flex-shrink: 0;
+}
+.mt-demand-tag.high { background: var(--crit-tint); color: var(--crit); }
+.mt-demand-tag.medium { background: var(--warn-tint); color: var(--warn); }
+.mt-demand-tag.low { background: var(--track); color: var(--ink-1); }
+.mt-opp-tip { font-size: .78rem; color: var(--ink-2); margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--border); line-height: 1.5; }
+
+/* ── Two-column section (Role demand / Career paths) ── */
+.mt-two-col { grid-template-columns: 1fr 1.3fr; }
+
+/* ── Role demand ── */
+.mt-role-row { display: flex; align-items: center; justify-content: space-between; padding: .65rem 0; }
+.mt-role-row + .mt-role-row { border-top: 1px solid var(--border); }
+.mt-role-title { font-size: .85rem; font-weight: 600; }
+.mt-role-right { display: flex; align-items: center; gap: .55rem; }
+.mt-role-count { font-size: .8rem; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.mt-trend { font-size: .78rem; font-weight: 700; min-width: 1.4em; text-align: center; padding: .1rem .35rem; border-radius: 6px; }
+.mt-trend-up, .mt-trend-up2 { color: var(--good); background: var(--good-tint); }
+.mt-trend-down { color: var(--crit); background: var(--crit-tint); }
+.mt-trend-flat { color: var(--ink-2); }
+.mt-trend-new { color: var(--accent); background: var(--accent-tint); font-size: .64rem; text-transform: uppercase; letter-spacing: .03em; }
+
+/* ── Career path cards ── */
+.mt-path-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.mt-path-card { display: flex; gap: .8rem; align-items: flex-start; padding: 1rem; background: var(--bg-2); border-radius: var(--radius-md); }
+.mt-path-icon {
+  width: 38px; height: 38px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.mt-path-icon svg { width: 18px; height: 18px; }
+.mt-path-body { flex: 1; min-width: 0; }
+.mt-path-title { font-size: .82rem; font-weight: 700; line-height: 1.3; }
+.mt-path-score-row { display: flex; align-items: baseline; gap: .35rem; margin-top: .4rem; }
+.mt-path-score { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mt-path-score-label { font-size: .68rem; color: var(--ink-2); }
+.mt-path-track { height: 6px; border-radius: 4px; background: var(--track); margin-top: .55rem; overflow: hidden; }
+.mt-path-fill { height: 100%; border-radius: 4px; width: 0; transition: width .9s cubic-bezier(.16,1,.3,1); }
+.mt-career-tip {
+  margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--border);
+  font-size: .82rem; color: var(--ink-1); line-height: 1.5;
+}
+.mt-career-tip b { color: var(--ink-0); }
+
+/* ── Market momentum ── */
+.mt-momentum-row { display: grid; grid-template-columns: minmax(100px, 200px) 70px 1fr; align-items: center; gap: .8rem; padding: .6rem 0; }
+.mt-momentum-row + .mt-momentum-row { border-top: 1px solid var(--border); }
+.mt-momentum-title { font-size: .84rem; font-weight: 600; }
+.mt-momentum-pct {
+  display: flex; align-items: center; gap: .3rem; font-size: .8rem; font-weight: 700;
+  color: var(--good); font-variant-numeric: tabular-nums;
+}
+.mt-momentum-track { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+.mt-momentum-fill {
+  height: 100%; border-radius: 4px; width: 0; transition: width .9s cubic-bezier(.16,1,.3,1);
+  background: linear-gradient(90deg, var(--accent), var(--good));
+}
+
+@media (max-width: 1180px) {
+  .stat-row-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 980px) {
+  .mt-insight-row, .mt-two-col { grid-template-columns: 1fr; }
+}

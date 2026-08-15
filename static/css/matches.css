@@ -1,0 +1,24 @@
+/*
+  matches.css — Your Matches page. Builds on dashboard.css (.job-logo,
+  .demand-row/.demand-track/.demand-fill for the score breakdown bars,
+  .filter-pills) and history.css (.history-item/.history-row-toggle/
+  .history-panel accordion) rather than inventing new atoms.
+*/
+
+.history-item.is-hidden { display: none; }
+
+.match-facts { display: flex; flex-wrap: wrap; gap: .8rem; }
+.match-fact {
+  display: flex; align-items: center; gap: .4rem; padding: .4rem .75rem;
+  border-radius: var(--radius-sm); background: var(--bg-2); font-size: .78rem;
+}
+.match-fact span { color: var(--ink-2); }
+.match-fact b { color: var(--ink-0); }
+
+.history-panel h4 { font-size: .8rem; font-weight: 700; margin-bottom: .5rem; }
+
+.match-description {
+  font-size: .82rem; line-height: 1.55; color: var(--ink-1);
+  white-space: pre-line; max-height: 220px; overflow-y: auto;
+  padding: .8rem; border-radius: var(--radius-sm); background: var(--bg-2);
+}

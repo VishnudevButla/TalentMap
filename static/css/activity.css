@@ -1,0 +1,56 @@
+/*
+  activity.css — page-specific tweaks for the full Activity page.
+  The .activity-feed/.activity-row/.activity-icon atoms themselves live in
+  components.css since the dashboard's Recent Activity preview reuses them.
+  Everything below (date headings, rich rows, type badges) is specific to
+  the full page's grouped/richer rendering — see static/js/activity.js.
+*/
+
+.activity-feed .activity-row { padding: .9rem 0; }
+
+/* ── Date group headings ── */
+.activity-date-heading {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-2); padding: 1.3rem 0 .6rem 0;
+}
+.activity-date-heading:first-child { padding-top: 0; }
+
+/* ── Rich row (full page only) ── */
+.activity-row-rich { display: flex; align-items: flex-start; gap: .85rem; padding: .8rem 0; position: relative; }
+.activity-row-rich + .activity-row-rich { border-top: 1px solid var(--border); }
+.activity-row-rich .activity-message { font-size: .86rem; font-weight: 500; margin-top: .35rem; }
+
+.activity-row-rich.is-clickable { cursor: pointer; border-radius: var(--radius-sm); transition: background var(--transition); }
+.activity-row-rich.is-clickable:hover { background: var(--track); }
+
+.activity-unread-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  margin-top: .55rem;
+}
+
+.activity-delete-btn {
+  background: none; border: none; color: var(--ink-2); font-size: 1.1rem; line-height: 1;
+  cursor: pointer; padding: .3rem .4rem; border-radius: var(--radius-sm); align-self: flex-start;
+  opacity: 0; transition: opacity var(--transition), background var(--transition), color var(--transition);
+}
+.activity-row-rich:hover .activity-delete-btn { opacity: 1; }
+.activity-delete-btn:hover { background: var(--crit-tint); color: var(--crit); }
+
+.activity-row-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.activity-row-head .activity-time { margin-top: 0; cursor: default; }
+
+/* ── Type badge (reuses the .stat-status pill language used elsewhere) ── */
+.activity-type-badge {
+  font-size: .68rem; font-weight: 700; padding: .18rem .55rem; border-radius: 99px;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.activity-type-accent  { background: var(--accent-tint); color: var(--accent); }
+.activity-type-good    { background: var(--good-tint); color: var(--good); }
+.activity-type-cyan    { background: var(--cyan-tint); color: var(--cyan); }
+.activity-type-neutral { background: var(--track); color: var(--ink-1); }
+
+/* ── Icon color variants, layered on top of components.css's .activity-icon ── */
+.activity-icon-accent  { background: var(--accent-tint); color: var(--accent); }
+.activity-icon-good    { background: var(--good-tint); color: var(--good); }
+.activity-icon-cyan    { background: var(--cyan-tint); color: var(--cyan); }
+.activity-icon-neutral { background: var(--track); color: var(--ink-1); }

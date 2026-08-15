@@ -1,0 +1,143 @@
+/*
+  upload.css — "New analysis" screen: resume dropzone, job description
+  form, and the pipeline explainer. Builds on components.css.
+*/
+
+.upload-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.3rem; align-items: start; }
+
+.dropzone {
+  /* A <label> defaults to display:inline — with block children (h3, p)
+     inside it, an inline box's border/background/border-radius gets
+     fragmented into separate pieces at each block boundary instead of
+     painting as one shape. display:flex fixes that structurally, not
+     just visually — it's not just centering the content, it's what
+     makes this a single paintable box in the first place. */
+  display: flex; flex-direction: column; align-items: center;
+  border: 1.5px dashed var(--border); border-radius: 14px; padding: 2.3rem 1.5rem; text-align: center;
+  background: var(--bg-2); cursor: pointer; transition: border-color var(--transition), background var(--transition);
+}
+.dropzone.is-dragover { border-color: var(--accent); background: var(--accent-tint); }
+.dropzone svg { width: 30px; height: 30px; color: var(--accent); margin: 0 auto .7rem; }
+.dropzone h3 { font-size: .95rem; font-weight: 700; }
+.dropzone p { font-size: .78rem; color: var(--ink-2); margin-top: .3rem; }
+.dropzone .browse { color: var(--accent); font-weight: 600; }
+.dropzone input[type="file"] { display: none; }
+
+.file-chip {
+  display: inline-flex; align-items: center; gap: .5rem; margin-top: 1rem; background: var(--bg-1);
+  border: 1px solid var(--border); padding: .4rem .7rem; border-radius: 9px; font-family: var(--font-mono); font-size: .76rem;
+}
+.file-chip svg { width: 13px; height: 13px; color: var(--good); flex-shrink: 0; }
+.file-chip.is-hidden { display: none; }
+
+.field { margin-top: 1.1rem; }
+.field label { display: block; font-size: .72rem; font-weight: 600; color: var(--ink-1); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .45rem; }
+.field textarea, .field input {
+  width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--ink-0);
+  padding: .65rem .8rem; font-family: inherit; font-size: .85rem; outline: none; resize: vertical;
+}
+.field textarea:focus, .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+
+.upload-cta { margin-top: 1.3rem; width: 100%; }
+.upload-note { font-size: .72rem; color: var(--ink-2); margin-top: .7rem; text-align: center; }
+.upload-error {
+  display: none; color: var(--crit); background: var(--crit-tint); border-radius: var(--radius-md);
+  padding: .65rem .8rem; font-size: .8rem; margin-top: 1rem;
+}
+
+/* ── Pipeline explainer ── */
+.pipeline { display: flex; flex-direction: column; }
+.pipe-step { display: flex; gap: .85rem; position: relative; padding-bottom: 1.5rem; }
+.pipe-step:last-child { padding-bottom: 0; }
+.pipe-step::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 1px; background: var(--border); }
+.pipe-step:last-child::before { display: none; }
+.pipe-dot {
+  width: 27px; height: 27px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-2); border: 1px solid var(--border); font-size: .72rem; font-weight: 700; color: var(--ink-1);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.pipe-text h4 { font-size: .83rem; font-weight: 700; transition: color var(--transition); }
+.pipe-text p { font-size: .74rem; color: var(--ink-2); margin-top: .15rem; line-height: 1.4; }
+
+/* ── Real step states, driven by static/js/upload.js from fetch results — see
+   the pipeline card's HTML comment for why step 3 never reaches "done" here. ── */
+.pipe-step[data-state="active"] .pipe-dot {
+  background: var(--accent-tint); border-color: var(--accent); color: var(--accent);
+}
+.pipe-step[data-state="active"] .pipe-dot { animation: pipe-pulse 1.4s ease-in-out infinite; }
+.pipe-step[data-state="active"] .pipe-text h4 { color: var(--accent); }
+
+.pipe-step[data-state="done"] .pipe-dot {
+  background: var(--good-tint); border-color: var(--good); color: var(--good);
+}
+.pipe-step[data-state="done"] .pipe-dot::before { content: '\2713'; }
+.pipe-step[data-state="done"] .pipe-dot-num { display: none; }
+
+.pipe-step[data-state="error"] .pipe-dot {
+  background: var(--crit-tint); border-color: var(--crit); color: var(--crit);
+}
+
+@keyframes pipe-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-tint); }
+  50% { box-shadow: 0 0 0 5px var(--accent-tint); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipe-step[data-state="active"] .pipe-dot { animation: none; }
+}
+
+/* ── Rich pipeline (5-step: dot + icon + text + status pill) ── */
+.pipeline-rich .pipe-step { align-items: center; gap: .9rem; }
+.pipe-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-2); color: var(--ink-2); transition: background var(--transition), color var(--transition);
+}
+.pipe-icon svg { width: 16px; height: 16px; }
+.pipeline-rich .pipe-text { flex: 1; min-width: 0; }
+.pipe-status-pill {
+  flex-shrink: 0; font-size: .68rem; font-weight: 700; padding: .22rem .6rem; border-radius: 999px;
+  background: var(--track); color: var(--ink-2); white-space: nowrap;
+}
+.pipe-status-pill.pipe-status-active { background: var(--accent-tint); color: var(--accent); }
+.pipe-status-pill.pipe-status-done { background: var(--good-tint); color: var(--good); }
+.pipe-status-pill.pipe-status-error { background: var(--crit-tint); color: var(--crit); }
+
+.pipe-step[data-state="active"] .pipe-icon { background: var(--accent-tint); color: var(--accent); }
+.pipe-step[data-state="done"] .pipe-icon { background: var(--good-tint); color: var(--good); }
+.pipe-step[data-state="error"] .pipe-icon { background: var(--crit-tint); color: var(--crit); }
+
+.pipeline-note { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+
+/* ── "How it works" modal ── */
+.modal-card-wide { max-width: 480px; text-align: left; }
+.modal-card-wide .modal-actions { justify-content: flex-end; }
+.how-it-works-list { display: flex; flex-direction: column; gap: .7rem; padding-left: 1.1rem; }
+.how-it-works-list li { font-size: .82rem; line-height: 1.5; color: var(--ink-1); }
+.how-it-works-list li b { color: var(--ink-0); }
+
+/* ── Extracted Information card ── */
+.ner-section-label { font-size: .72rem; font-weight: 700; color: var(--ink-1); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .6rem; }
+.ner-show-more {
+  display: block; margin-top: .7rem; background: none; border: none; color: var(--accent);
+  font: inherit; font-size: .78rem; font-weight: 600; cursor: pointer; padding: 0;
+}
+.ner-show-more:hover { text-decoration: underline; }
+
+.smart-extraction-note {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem;
+}
+.smart-extraction-icon {
+  width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--accent-tint); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; margin-bottom: .7rem;
+}
+.smart-extraction-icon svg { width: 15px; height: 15px; }
+.smart-extraction-note h4 { font-size: .85rem; font-weight: 700; }
+.smart-extraction-note p { font-size: .78rem; color: var(--ink-2); line-height: 1.5; margin-top: .4rem; }
+.smart-extraction-footnote { display: flex; align-items: flex-start; gap: .4rem; margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+.smart-extraction-footnote svg { flex-shrink: 0; margin-top: .15rem; color: var(--ink-2); }
+
+@media (max-width: 980px) {
+  .upload-grid, .field-row { grid-template-columns: 1fr; }
+}

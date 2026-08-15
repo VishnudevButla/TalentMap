@@ -1,0 +1,161 @@
+/*
+  history.css — "Your Resumes" page, PLUS shared accordion primitives
+  (.history-item/.history-row-toggle/.history-panel/.ner-group) that
+  static/js/matches.js and static/js/agent.js's Recent Discoveries also
+  depend on — matches.html and agent.html both link this file for exactly
+  those shared atoms, per matches.css's own header comment. The Resume
+  History page itself no longer uses the accordion pattern (its own
+  .history-row-card below replaces it), but these rules stay here since
+  removing them breaks the other two pages.
+*/
+
+.history-list { display: flex; flex-direction: column; }
+.history-item + .history-item { border-top: 1px solid var(--border); }
+/* The new Resume History page's cards (.history-row-card, below) use this
+   same #historyList/.history-list container but want gap-based spacing
+   instead of a divider border — both coexist fine since .history-row-card
+   has its own border, so the extra .history-item border-top rule above
+   simply doesn't apply to it. */
+#historyList.history-list { gap: .8rem; }
+
+.history-row-toggle {
+  display: flex; align-items: center; gap: 1rem; width: 100%; padding: .9rem 0;
+  background: none; border: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+}
+.history-main { flex: 1; min-width: 0; }
+.history-main h3 { font-size: .88rem; font-weight: 700; }
+
+.history-toggle-right { display: flex; align-items: center; gap: .7rem; flex-shrink: 0; }
+.history-chevron { color: var(--ink-2); transition: transform var(--transition); font-size: .8rem; }
+.history-row-toggle[aria-expanded="true"] .history-chevron { transform: rotate(180deg); }
+
+.history-panel { padding: 0 0 1.1rem 0; display: flex; flex-direction: column; gap: 1rem; }
+/* `.history-panel { display: flex }` above otherwise beats the [hidden]
+   attribute's default `display: none` — this restores it. */
+.history-panel[hidden] { display: none; }
+.history-panel-actions { display: flex; }
+.history-panel-score h4,
+.history-ner h4 { font-size: .8rem; font-weight: 700; margin-bottom: .4rem; }
+.history-panel-score .card-sub { margin: 0; }
+
+.ner-group + .ner-group { margin-top: .8rem; }
+.ner-group h5 { font-size: .72rem; font-weight: 700; color: var(--ink-1); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .4rem; }
+.ner-group .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* ── Stats row (new Resume History page only) ── */
+.resume-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
+.resume-stat { padding: 1.1rem 1.2rem; }
+.resume-stat .stat-figure { margin-top: .35rem; font-size: 1.6rem; }
+
+/* ── Shared: file icon badge ── */
+.resume-file-icon {
+  width: 46px; height: 46px; border-radius: var(--radius-md); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--good-tint); color: var(--good); font-size: .68rem; font-weight: 800;
+  letter-spacing: .02em;
+}
+.resume-file-icon-sm { width: 38px; height: 38px; font-size: .6rem; background: var(--accent-tint); color: var(--accent); }
+
+/* ── Current Resume hero card ── */
+.resume-hero {
+  display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: start;
+  padding: 1.2rem; border: 1px solid var(--good); border-radius: var(--radius-lg);
+  background: var(--good-tint); position: relative;
+}
+.resume-hero-main { display: flex; gap: .9rem; min-width: 0; }
+.resume-hero-info { min-width: 0; flex: 1; }
+.resume-hero-title { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.resume-hero-title h3 { font-size: 1rem; font-weight: 700; }
+.resume-hero-actions { display: flex; gap: .6rem; margin-top: 1rem; }
+.resume-hero-score { text-align: right; min-width: 200px; }
+.resume-hero-score .meter { margin-top: .5rem; }
+.resume-hero-score .resume-best-match { text-align: left; margin-top: .6rem; }
+
+/* ── Score block (shared: hero + history rows) ── */
+.resume-score { display: flex; align-items: baseline; gap: .5rem; justify-content: flex-end; }
+.resume-score-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.resume-score-value.excellent, .resume-score-value.good { color: var(--good); }
+.resume-score-value.warn { color: var(--warn); }
+.resume-score-value.crit { color: var(--crit); }
+
+/* ── Resume History — flat cards (no accordion; detail view lives in the
+   shared Extracted Information panel instead) ── */
+.history-row-card {
+  display: grid; grid-template-columns: auto 1fr auto auto; gap: 1rem; align-items: start;
+  padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--bg-2); position: relative;
+}
+.history-row-main { min-width: 0; }
+.history-row-score { text-align: right; min-width: 170px; }
+.history-row-score .meter { margin-top: .4rem; }
+.history-row-score .resume-best-match { text-align: left; font-size: .72rem; }
+
+.history-meta { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; flex-wrap: wrap; }
+.history-meta span { font-size: .74rem; color: var(--ink-2); }
+
+/* ── Kebab menu ── */
+.kebab-wrap { position: relative; align-self: start; }
+.kebab-btn {
+  width: 30px; height: 30px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg-1); color: var(--ink-1); cursor: pointer; font-size: 1rem; line-height: 1;
+}
+.kebab-btn:hover { background: var(--track); }
+.kebab-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 190px;
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow); padding: .35rem; display: flex; flex-direction: column;
+}
+/* .kebab-menu's own `display: flex` has the same specificity as the
+   browser's built-in `[hidden] { display: none }` rule, and author CSS
+   wins ties against the UA stylesheet — so without this, toggling the
+   `hidden` attribute in JS had no visual effect at all; the menu stayed
+   rendered (and clickable) regardless of its actual open/closed state.
+   [hidden] here has higher specificity than the bare class above, so it
+   correctly wins. */
+.kebab-menu[hidden] { display: none; }
+.kebab-menu button {
+  text-align: left; background: none; border: none; color: var(--ink-0); font: inherit;
+  font-size: .82rem; padding: .55rem .6rem; border-radius: var(--radius-sm); cursor: pointer;
+}
+.kebab-menu button:hover { background: var(--track); }
+.kebab-menu button.is-danger { color: var(--crit); }
+
+/* ── Inline rename ── */
+.rename-input {
+  font-size: 1rem; font-weight: 700; font-family: inherit; background: var(--bg-1);
+  border: 1px solid var(--accent); border-radius: var(--radius-sm); color: var(--ink-0);
+  padding: .2rem .5rem; outline: none; max-width: 280px;
+}
+
+/* ── Extracted Information panel ── */
+.ner-tabs { display: flex; gap: 1.4rem; border-bottom: 1px solid var(--border); margin-bottom: 1.1rem; }
+.ner-tab {
+  background: none; border: none; padding: .3rem 0 .8rem; font: inherit; font-size: .84rem;
+  font-weight: 600; color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.ner-tab.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+.ner-tab:hover:not(.is-active) { color: var(--ink-0); }
+
+.extracted-info-body { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; align-items: start; }
+.ner-tab-content .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ner-list { list-style: none; display: flex; flex-direction: column; gap: .55rem; }
+.ner-list li { font-size: .84rem; color: var(--ink-0); line-height: 1.5; padding-left: .9rem; position: relative; }
+.ner-list li::before { content: ''; position: absolute; left: 0; top: .55rem; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+.skill-summary-panel h4 { font-size: .82rem; font-weight: 700; margin-bottom: .9rem; }
+.skill-donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+.skill-donut { width: 140px; height: 140px; }
+.skill-donut-figure { font-size: 15px; font-weight: 800; fill: var(--ink-0); font-family: var(--font-ui); }
+.skill-donut-caption { font-size: 7px; fill: var(--ink-2); font-family: var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
+.skill-donut-legend { width: 100%; display: flex; flex-direction: column; gap: .55rem; font-size: .78rem; color: var(--ink-1); }
+.skill-donut-legend > div { display: flex; align-items: center; gap: .5rem; }
+.skill-donut-legend b { margin-left: auto; color: var(--ink-0); font-variant-numeric: tabular-nums; }
+.skill-donut-legend .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+@media (max-width: 980px) {
+  .resume-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .resume-hero, .history-row-card { grid-template-columns: 1fr; }
+  .resume-hero-score, .history-row-score { text-align: left; min-width: 0; }
+  .extracted-info-body { grid-template-columns: 1fr; }
+}

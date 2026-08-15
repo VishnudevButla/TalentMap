@@ -1,0 +1,182 @@
+/*
+  components.css — shared app-shell atoms: nav rail, topbar, card, chip,
+  badge, meter, button. Consumed by every authenticated page (dashboard,
+  upload, and future pages). Page-specific layouts live in their own
+  <page>.css file and build on top of these.
+*/
+
+.shell { position: relative; z-index: 1; display: flex; min-height: 100vh; }
+
+/* ── Rail ── */
+.rail {
+  width: 226px; flex-shrink: 0; padding: 1.6rem 1.1rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 1.9rem;
+}
+.brand { display: flex; align-items: center; gap: .6rem; padding: 0 .3rem; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(113, 140, 114, .28);
+}
+.brand-mark svg { width: 18px; height: 18px; }
+.brand-name { font-size: 1.02rem; font-weight: 700; letter-spacing: -.02em; }
+.brand-name em { font-style: normal; color: var(--accent); }
+
+.navlist { list-style: none; display: flex; flex-direction: column; gap: .15rem; }
+.navlist a, .navlist span.disabled {
+  display: flex; align-items: center; gap: .7rem; padding: .58rem .7rem; border-radius: 10px;
+  font-size: .87rem; color: var(--ink-1); text-decoration: none; font-weight: 500;
+}
+.navlist a svg, .navlist span.disabled svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .85; }
+.navlist a[aria-current="page"] { background: var(--accent-tint); color: var(--ink-0); }
+.navlist a:hover { background: var(--track); color: var(--ink-0); }
+.navlist span.disabled { color: var(--ink-2); cursor: default; justify-content: space-between; }
+.navlist .soon {
+  font-size: .6rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-2);
+  background: var(--track); padding: .12rem .4rem; border-radius: 5px;
+}
+.rail-foot { margin-top: auto; padding: .85rem; border-radius: var(--radius-md); background: var(--bg-1); border: 1px solid var(--border); }
+.rail-foot p { font-size: .72rem; color: var(--ink-2); line-height: 1.5; }
+.rail-foot strong { color: var(--ink-1); font-weight: 600; }
+
+.rail-toggle { display: none; }
+
+/* ── Main / topbar ── */
+.main { position: relative; z-index: 1; flex: 1; min-width: 0; padding: 1.9rem 2.4rem 3.5rem; max-width: 1180px; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.9rem; flex-wrap: wrap; }
+.identity { display: flex; align-items: center; gap: .85rem; }
+.avatar {
+  width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .95rem; color: var(--bg-0);
+}
+.identity h1 { font-size: 1.28rem; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+.identity-meta { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; flex-wrap: wrap; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; color: var(--ink-1);
+  background: var(--bg-1); border: 1px solid var(--border); padding: .24rem .55rem; border-radius: 7px;
+}
+.chip.mono { font-family: var(--font-mono); }
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem; font-size: .76rem; font-weight: 600;
+  background: var(--accent-tint); color: var(--ink-0); padding: .26rem .6rem; border-radius: 7px;
+}
+.badge.sample { background: var(--warn-tint); color: var(--warn); }
+
+/* ── Card ── */
+.card {
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 1.35rem 1.4rem; transition: border-color var(--transition), box-shadow var(--transition);
+}
+.card:hover { border-color: rgba(113, 140, 114, .32); box-shadow: var(--shadow); }
+.card h2 { font-size: .95rem; font-weight: 700; letter-spacing: -.01em; }
+.card-sub { font-size: .76rem; color: var(--ink-2); margin-top: .15rem; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.1rem; gap: 1rem; }
+.see-all { font-size: .76rem; color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+
+/* ── Meter ── */
+.meter { height: 8px; border-radius: 5px; background: var(--accent-tint); overflow: hidden; margin-top: .85rem; }
+.meter > span { display: block; height: 100%; border-radius: 5px; background: var(--accent); width: 0; transition: width .9s cubic-bezier(.16, 1, .3, 1); }
+
+/* ── Buttons ── */
+.btn-primary {
+  border: none; border-radius: var(--radius-md); color: var(--bg-0); font-weight: 700; font-size: .9rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); cursor: pointer;
+  box-shadow: 0 6px 16px rgba(113, 140, 114, .24); padding: .85rem 1.1rem;
+  transition: opacity var(--transition), transform var(--transition);
+}
+.btn-primary:hover { opacity: .94; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.btn-sm { padding: .45rem .75rem; font-size: .78rem; border-radius: var(--radius-sm); box-shadow: none; }
+
+.btn-ghost {
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-2);
+  color: var(--ink-0); font-weight: 700; font-size: .9rem; font-family: inherit;
+  cursor: pointer; padding: .85rem 1.1rem; transition: background var(--transition), border-color var(--transition);
+}
+.btn-ghost:hover { background: var(--track); border-color: rgba(165, 190, 155, .3); }
+
+/* ── Confirm modal (shared — currently used for sign-out) ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+  background: rgba(6, 8, 5, .6); backdrop-filter: blur(3px); padding: 1rem;
+  animation: modal-fade-in var(--transition) ease-out;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-card {
+  width: 100%; max-width: 380px; background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 1.6rem;
+  text-align: center; animation: modal-scale-in var(--transition) ease-out;
+}
+.modal-icon {
+  width: 46px; height: 46px; margin: 0 auto .9rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--crit-tint); color: var(--crit);
+}
+.modal-icon svg { width: 20px; height: 20px; }
+.modal-card h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+.modal-card .card-sub { margin-top: .4rem; }
+.modal-actions { display: flex; gap: .7rem; margin-top: 1.4rem; }
+.modal-actions button { flex: 1; }
+
+@keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-scale-in { from { opacity: 0; transform: scale(.96) translateY(4px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay, .modal-card { animation: none; }
+}
+
+/* ── Status pill (shared across dashboard, history, activity, agent) ──
+   "excellent" gets gold, not the same green as "good" — gold is reserved
+   for genuinely high-value moments, so it stays meaningful instead of
+   turning into a third "success" color used everywhere. */
+.stat-status { font-size: .72rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; }
+.stat-status.excellent { background: var(--gold-tint); color: var(--gold); }
+.stat-status.good { background: var(--good-tint); color: var(--good); }
+.stat-status.warn { background: var(--warn-tint); color: var(--warn); }
+.stat-status.crit { background: var(--crit-tint); color: var(--crit); }
+
+/* ── Dot indicator (shared: skill sections, agent status) ── */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.dot.gold { background: var(--gold); }
+.dot.good { background: var(--good); }
+.dot.warn { background: var(--warn); }
+.dot.crit { background: var(--crit); }
+
+/* ── Empty state (history, activity, job matches) ── */
+.empty-state { text-align: center; padding: 2.4rem 1rem; color: var(--ink-2); }
+.empty-state svg { width: 32px; height: 32px; margin: 0 auto .8rem; opacity: .6; }
+.empty-state p { font-size: .85rem; }
+
+/* ── Activity feed (shared: dashboard preview + full /activity page) ── */
+.activity-feed { display: flex; flex-direction: column; }
+.activity-row { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem 0; }
+.activity-row + .activity-row { border-top: 1px solid var(--border); }
+.activity-row.is-clickable { cursor: pointer; border-radius: var(--radius-sm); transition: background var(--transition); margin: 0 -.4rem; padding-left: .4rem; padding-right: .4rem; }
+.activity-row.is-clickable:hover { background: var(--track); }
+.activity-icon {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--accent-tint); color: var(--accent);
+}
+.activity-icon svg { width: 14px; height: 14px; }
+.activity-body { flex: 1; min-width: 0; }
+.activity-message { font-size: .82rem; color: var(--ink-0); line-height: 1.4; }
+.activity-time { font-size: .72rem; color: var(--ink-2); margin-top: .2rem; white-space: nowrap; }
+
+@media (max-width: 980px) {
+  .rail {
+    position: fixed; inset: 0 auto 0 0; z-index: 20; background: var(--bg-0);
+    transform: translateX(-100%); transition: transform var(--transition); box-shadow: var(--shadow);
+  }
+  .rail.is-open { transform: translateX(0); }
+  .rail-toggle {
+    display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--bg-1); color: var(--ink-0);
+    cursor: pointer; margin-bottom: .5rem;
+  }
+  .main { padding: 1.6rem 1.2rem 3rem; }
+}

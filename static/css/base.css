@@ -1,0 +1,62 @@
+/*
+  base.css — resets, base typography, and the ambient canvas that sits
+  behind every page. Loaded after tokens.css on every layout.
+*/
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-0);
+  color: var(--ink-0);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+a { color: inherit; }
+button { font-family: inherit; }
+img, svg { display: block; max-width: 100%; }
+
+::selection { background: var(--accent); color: var(--bg-0); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-2); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Ambient network canvas — a quiet, technical backdrop rather than a
+   decorative hero. Fixed behind all content, never intercepts clicks. */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .55;
+}
+
+/* A quiet corner highlight, not a hero glow — kept small and mostly
+   off-canvas so it reads as ambient depth rather than a "neon" wash. */
+.page-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(560px 320px at 12% -10%, var(--accent-tint), transparent 65%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
