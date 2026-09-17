@@ -21,3 +21,4 @@ router = APIRouter()
 @router.get("/market-trends")
 async def market_trends_summary(user_id: str = Depends(get_current_user)):
     return get_market_trends_context(user_id)
+ 
