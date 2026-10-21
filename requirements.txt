@@ -54,10 +54,6 @@ sentence_transformers
 #brevo
 sib-api-v3-sdk==7.6.0
 
-# AI Job Agent scheduler — runs in worker.py, a process separate from the
-# FastAPI app (app/main.py) — see worker.py's module docstring.
-# APScheduler==3.10.4
-# inngest>=0.4.0
-
+# Celery & Redis for background tasks & scheduling
 celery[redis]==5.4.0
 redis==5.0.0
