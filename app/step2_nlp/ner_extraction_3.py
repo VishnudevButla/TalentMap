@@ -1,14 +1,17 @@
 """
 app/step2_nlp/3_ner_extractor.py — LLM-based NER Extractor
 
-Uses Groq (OpenAI-compatible chat completions API, hosting open models
-like Llama) to read resume text + job description and return structured
-entities as JSON, instead of spaCy pattern matching. Previously used
-Gemini directly — switched because the Gemini free tier required a
-billing-enabled project to grant any quota at all (limit: 0 on every
-account tried), while Groq's free tier actually works for this use case.
-Plain `requests` against Groq's REST endpoint, no new SDK dependency —
-matches how job_source_fetcher.py already calls Adzuna/RemoteOK.
+Uses Groq (OpenAI-compatible chat completions API) to read resume text
+and return structured entities as JSON.
+
+Model priority list (tried in order, falls back on model_not_found):
+  1. openai/gpt-oss-20b  — best JSON fidelity, returns clean plain strings
+  2. qwen/qwen3.8-27b    — reliable fallback, may return nested objects
+                           (handled by _flatten_entities)
+
+Note: llama-3.3-70b-versatile was deprecated/removed from Groq in late
+2026. The fallback chain ensures extraction keeps working as Groq evolves
+its model catalogue without requiring a code change every time.
 """
 
 import os
@@ -28,7 +31,19 @@ except ImportError:
     pass
 
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-_GROQ_MODEL = "llama-3.3-70b-versatile"
+
+# Priority-ordered list of models to try. Falls back to the next entry
+# whenever the API returns model_not_found (HTTP 404 code). This makes
+# extraction resilient to Groq deprecating any single model.
+_GROQ_MODELS = [
+    "openai/gpt-oss-20b",   # Best structured JSON output, currently available
+    "qwen/qwen3.8-27b",     # Reliable fallback, higher chance of nested objects
+    "allam-2-7b",           # Last-resort small model
+]
+
+# Keep a single-entry alias so any external code that imported
+# _GROQ_MODEL directly (e.g. tests) doesn't break.
+_GROQ_MODEL = _GROQ_MODELS[0]
 
 
 def _get_api_key() -> str:
@@ -124,6 +139,55 @@ def _flatten_entities(parsed: dict) -> dict:
     return flattened
 
 
+def _call_groq(api_key: str, prompt: str) -> dict:
+    """
+    Attempts to call Groq's chat completions API, iterating through
+    _GROQ_MODELS in priority order. Returns the parsed JSON dict on
+    success, or raises the last exception if all models fail.
+    """
+    last_exc = None
+    for model in _GROQ_MODELS:
+        try:
+            start = time.perf_counter()
+            response = requests.post(
+                _GROQ_URL,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0,
+                    "response_format": {"type": "json_object"},
+                },
+                timeout=30,
+            )
+
+            # 404 with code=model_not_found → try next model
+            if response.status_code == 404:
+                err_body = response.json().get("error", {})
+                if err_body.get("code") == "model_not_found":
+                    logger.warning("Groq model not found, trying next: %s", model)
+                    continue
+
+            response.raise_for_status()
+            duration = time.perf_counter() - start
+            logger.info("Groq NER extraction completed in %.1fs using model: %s", duration, model)
+
+            raw_output = response.json()["choices"][0]["message"]["content"].strip()
+            raw_output = raw_output.replace("```json", "").replace("```", "").strip()
+            return json.loads(raw_output)
+
+        except requests.exceptions.RequestException as exc:
+            logger.warning("Groq request failed for model %s: %s", model, exc)
+            last_exc = exc
+            continue
+        except (json.JSONDecodeError, KeyError) as exc:
+            logger.warning("Groq response parse failed for model %s: %s", model, exc)
+            last_exc = exc
+            continue
+
+    raise RuntimeError(f"All Groq models failed. Last error: {last_exc}")
+
+
 def extract_entities(resume_text: str, job_description: str) -> dict:
     _empty = {
         "skills": [], "education": [], "experience": [],
@@ -143,30 +207,11 @@ def extract_entities(resume_text: str, job_description: str) -> dict:
                              .replace("{resume_text}", resume_text)
 
     try:
-        start = time.perf_counter()
-        response = requests.post(
-            _GROQ_URL,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={
-                "model": _GROQ_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0,
-                "response_format": {"type": "json_object"},
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
-        duration = time.perf_counter() - start
-        logger.info("Groq entity extraction completed in %.1f seconds", duration)
-
-        raw_output = response.json()["choices"][0]["message"]["content"].strip()
-        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
-        parsed = json.loads(raw_output)            # convert JSON text → Python dict
+        parsed = _call_groq(api_key, prompt)
         return _flatten_entities(parsed)
     except Exception as exc:
-        # LLM didn't return clean JSON or network error — fail safely,
-        # same fallback behavior as before, now with a full traceback logged.
-        logger.exception("NER extraction failed")
+        # All models failed or JSON was unparseable — return empty safely.
+        logger.exception("NER extraction failed after trying all models")
         return {
             **_empty,
             "_error": str(exc),
